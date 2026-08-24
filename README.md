@@ -17,7 +17,7 @@ curl -sSL https://raw.githubusercontent.com/amirkiarafiei/kia-context/main/insta
 
 ## How to Use
 
-![Flow](assets/flow.png)
+<img src="assets/flow.png" alt="Flow" width="60%" />
 
 Sorry I just lied. There is one small thing you need to learn:
 
