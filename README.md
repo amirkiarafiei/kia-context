@@ -1,6 +1,6 @@
-<img src="assets/banner.jpeg" alt="kia-context — loop-friendly project context" width="70%" />
+![kia-context — loop-friendly project context](assets/banner.jpeg)
 
-# kia-context
+# Kia Context
 
 **A Loop Engineering-friendly Kit of Markdown Files to Maintain Project Context for/by Agents. Nothing More!**
 
@@ -21,7 +21,7 @@ curl -sSL https://raw.githubusercontent.com/amirkiarafiei/kia-context/main/insta
 
 ## How to Use
 
-<img src="assets/flow.png" alt="Flow" width="60%" />
+![Flow](assets/flow.png)
 
 Sorry I just lied. There is one small thing you need to learn:
 
