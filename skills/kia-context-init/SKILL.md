@@ -33,9 +33,34 @@ These need no human input. Read the repository and write them.
 
 | File | Where it comes from |
 |---|---|
-| `specs/ARCHITECTURE.md` | Reverse-engineer it. Manifests and lock files give the stack; the top-level tree gives the layout; the entry points give the one-page summary. Keep the layout one level deep. |
+| `specs/ARCHITECTURE.md` | Reverse-engineer it — properly. See the recipe below; a stack table and a folder list is a failed pass. |
 | `specs/DESIGN.md` | Reverse-engineer it from the stylesheets, theme file or component library — real token values, not invented ones. **If the project has no interface, delete the file** rather than filling it with defaults. |
 | `INDEX.md` | Write it last, once you know what the other files actually contain. |
+
+### Reverse-engineering ARCHITECTURE.md — the part that goes wrong
+
+The stack and the folder tree are the two cheapest facts in any repository, so a shallow pass always
+stops there. They are also the two a reader could get for themselves in one command. **Gather them
+first, then keep going.** The file's own *How deep to go* section lists the questions it has to answer;
+this is where the answers live in a codebase.
+
+| To find | Read |
+|---|---|
+| **The nouns** and how they relate | Data models, schemas, migrations, type definitions. The tables and their foreign keys *are* the domain model. |
+| **The states** and who moves them | Status columns and their enums, constants named for states, the functions that write them, and any permission or role check guarding those writes. Reconstruct the machine — this is the single most common thing missing. |
+| **The rules** | Validation, constraints, unique indexes, guard clauses, anything that raises or rejects. What the system refuses to do is as much a fact as what it does. |
+| **The flows** | Entry points — routes, handlers, commands, jobs, event consumers — followed through one full path. End-to-end tests are usually the clearest description of a flow anyone has written down. |
+| **The contracts** | The public API surface, the events published and consumed, the external services called. |
+| **The words** | Names that recur across modules and mean something specific to this domain. If a term would be misread by an outsider, define it. |
+
+Put the command beside a count. For anything a command cannot produce — a domain model, a lifecycle, a
+rule — **cite the path you read it from**; a file path beside a state machine is as verifiable as a
+`wc -l` beside a number. **Never drop a section just because no command produces it.** That is how the
+expensive half of the file goes missing while the cheap half looks thorough. Where the code contradicts
+the README or a comment, the code wins — and say so.
+
+**Before you move on, re-read the six questions and check each one is answered.** If the file says what
+the system is built *with* but not what it is *about*, it is not finished.
 
 ## Step 3 — infer the history, and label it as inferred
 
@@ -100,4 +125,6 @@ Tell the human, in a few lines:
 - which files you filled, and from what;
 - which are marked inferred;
 - which are still placeholders and what you would need to finish them;
+- **anything you decided not to write, and why** — a section you could not verify, a question you could
+  not answer from the code. Narrowing the job quietly is the failure mode here; saying so is not;
 - anything you found while reading that they may not know.

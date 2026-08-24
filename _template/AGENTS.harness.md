@@ -59,8 +59,19 @@ Four levels under `context/`, split by **authority**, not by topic.
 `docs/` is a different thing entirely: human-facing artifacts, written **only when a human asks for one**.
 Agents do not maintain them and do not need to read them to do the work.
 
-**Where a finding goes.** The reasoning into `BRAINSTORM.md` as a numbered decision. The resulting rule
-into `MANIFESTO.md` or `ARCHITECTURE.md`. The work into `PROGRESS.md`.
+**Where a finding goes.** The reasoning into `BRAINSTORM.md` as a numbered decision. The work into
+`PROGRESS.md`. A resulting rule goes into `MANIFESTO.md` **or** `ARCHITECTURE.md`, and that split is the
+one people get wrong:
+
+- **`MANIFESTO.md` holds a promise.** Somebody chose it and could have chosen otherwise, and it would
+  still stand if the whole system were rewritten in another language tomorrow.
+- **`ARCHITECTURE.md` holds a fact about how the system is built.** What the things are, how they relate,
+  what states they move through, and where a rule is actually enforced.
+
+**A domain rule that sounds like a business rule is usually ARCHITECTURE.** *"An order has one customer
+and many lines"* is the data model, not a promise. When a rule is genuinely both, `MANIFESTO.md` states
+the promise in one line and `ARCHITECTURE.md` says how it is enforced — never both in full, and never
+only the promise, which leaves the mechanism written down nowhere.
 
 ### Seven rules for keeping these files honest
 

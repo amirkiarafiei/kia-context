@@ -76,7 +76,7 @@ Four levels, split by **authority**, not by topic.
 | File | What it is |
 |---|---|
 | `MANIFESTO.md` | The product boundary. Numbered rules that may not be traded away. Plain English. |
-| `ARCHITECTURE.md` | The technical blueprint. Stack, topology, data, structural invariants. |
+| `ARCHITECTURE.md` | The technical blueprint — the domain it models and the rules it enforces, as well as the stack and the layout. |
 | `DESIGN.md` | The interface blueprint. Tokens, rationale, and the don'ts with their measurements. **Delete it if this project has no interface** — a library, a service or a pipeline does not need one. |
 
 ### `context/logs/` — state · written every session

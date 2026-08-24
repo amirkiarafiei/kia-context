@@ -59,6 +59,9 @@ last_updated: "{{YYYY-MM-DD}}"
 
 These may not be traded away for speed, cost, or output quality.
 
+> A rule that describes **how the system is built** belongs in `ARCHITECTURE.md`, even when it sounds
+> like a business rule. See *Where a finding goes* in `AGENTS.md` for the split.
+
 > **Numbering is permanent.** These rules get cited from code comments as `MANIFESTO rule 4`. Renumbering
 > breaks every citation and nothing errors. **Append. Strike through rather than delete.**
 >
