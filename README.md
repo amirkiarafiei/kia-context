@@ -9,7 +9,15 @@ things go without being told every session.
 
 There is nothing to learn. You talk to your agent normally; it keeps the files up to date.
 
+## Quick Install
+
+```bash
+curl -sSL https://raw.githubusercontent.com/amirkiarafiei/kia-context/main/install.sh | bash
+```
+
 ## How to Use
+
+![Flow](assets/flow.png)
 
 Sorry I just lied. There is one small thing you need to learn:
 
@@ -41,25 +49,6 @@ text, and are free to go out of date, because nothing reads them to do the work.
 Delete whatever your project does not need. Every layout in every file is a suggestion; only the
 frontmatter is fixed.
 
-## Install
-
-```bash
-curl -sSL https://raw.githubusercontent.com/amirkiarafiei/kia-context/main/install.sh | bash
-```
-
-Or clone the repo and run `./install.sh`. It asks one question — which agents work in this repo —
-never overwrites a file you already have, and is safe to run again.
-
-```
-./install.sh                                    interactive
-./install.sh --yes --agents claude,cursor       non-interactive
-./install.sh --dry-run                          show what it would do
-```
-
-It does three things: creates `context/` and `docs/`, adds the agent instructions to `AGENTS.md` (and
-`CLAUDE.md` / `GEMINI.md`) inside markers so a re-run replaces them instead of adding a second copy, and
-installs three project-scoped skills for the agents you pick.
-
 ## Skills
 
 You can run them, and so can the agent.
@@ -77,6 +66,26 @@ definition of done, and a place to write the result. `PROGRESS.md` ships with it
 circuit breakers, so the loop knows when to stop.
 
 That comes from the format. Nothing here needs a loop.
+
+
+## Installation
+
+```bash
+curl -sSL https://raw.githubusercontent.com/amirkiarafiei/kia-context/main/install.sh | bash
+```
+
+Or clone the repo and run `./install.sh`. It asks one question — which agents work in this repo —
+never overwrites a file you already have, and is safe to run again.
+
+```
+./install.sh                                    interactive
+./install.sh --yes --agents claude,cursor       non-interactive
+./install.sh --dry-run                          show what it would do
+```
+
+It does three things: creates `context/` and `docs/`, adds the agent instructions to `AGENTS.md` (and
+`CLAUDE.md` / `GEMINI.md`) inside markers so a re-run replaces them instead of adding a second copy, and
+installs three project-scoped skills for the agents you pick.
 
 ## Layout of this repository
 
