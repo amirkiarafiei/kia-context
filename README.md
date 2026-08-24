@@ -77,12 +77,9 @@ That comes from the format. Nothing here needs a loop.
 
 ## Installation
 
-```bash
-curl -sSL https://raw.githubusercontent.com/amirkiarafiei/kia-context/main/install.sh | bash
-```
-
-Or clone the repo and run `./install.sh`. It asks one question — which agents work in this repo —
-never overwrites a file you already have, and is safe to run again.
+The one-liner at the top is the fast path. To read the script before running it, clone the repo and run
+`./install.sh`. Either way it asks one question — which agents work in this repo — never overwrites a
+file you already have, and is safe to run again.
 
 ```
 ./install.sh                                    interactive
