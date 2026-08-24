@@ -16,7 +16,12 @@ _template/
     AUTHENTICATION.md · SECURITY.md
 ```
 
-## Installing it by hand
+## Installing
+
+Run `./install.sh` from the repository root above this one — it does all of the below, never overwrites
+an existing file, and is safe to re-run.
+
+## Or by hand
 
 1. Copy `context/` and `docs/` into the repository root.
 2. Append `AGENTS.harness.md` to the end of `AGENTS.md` and `CLAUDE.md`, then delete it.
