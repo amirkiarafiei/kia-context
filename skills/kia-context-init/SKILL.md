@@ -44,14 +44,18 @@ stops there. They are also the two a reader could get for themselves in one comm
 first, then keep going.** The file's own *How deep to go* section lists the questions it has to answer;
 this is where the answers live in a codebase.
 
-| To find | Read |
+| What you are looking for | Where it usually lives |
 |---|---|
-| **The nouns** and how they relate | Data models, schemas, migrations, type definitions. The tables and their foreign keys *are* the domain model. |
-| **The states** and who moves them | Status columns and their enums, constants named for states, the functions that write them, and any permission or role check guarding those writes. Reconstruct the machine — this is the single most common thing missing. |
-| **The rules** | Validation, constraints, unique indexes, guard clauses, anything that raises or rejects. What the system refuses to do is as much a fact as what it does. |
-| **The flows** | Entry points — routes, handlers, commands, jobs, event consumers — followed through one full path. End-to-end tests are usually the clearest description of a flow anyone has written down. |
-| **The contracts** | The public API surface, the events published and consumed, the external services called. |
-| **The words** | Names that recur across modules and mean something specific to this domain. If a term would be misread by an outsider, define it. |
+| The things this system deals with, and how they relate | Data models, schemas, migrations, type definitions. The tables and their foreign keys *are* the domain model. |
+| Anything that moves through states, and who moves it | Status columns and their enums, constants named for states, the functions that write them, and any permission check guarding those writes. Reconstruct the machine — it is the most common thing missing. |
+| What the system refuses to do | Validation, constraints, unique indexes, guard clauses, anything that raises or rejects. A refusal is as much a fact as an action. |
+| What happens end to end | Entry points — routes, handlers, commands, jobs, event consumers — followed through one full path. End-to-end tests are usually the clearest description of a flow anyone has written down. |
+| What it exposes and what it depends on | The public API surface, the events published and consumed, the external services called. |
+| Terms an outsider would misread | Names that recur across modules and mean something specific to this domain. |
+
+**This table is where to look, not what to call things.** Name the sections you write after the
+project's own subject matter, never after a row of this table. How many sections, what they are called
+and in what order is the agent's judgement, made per project.
 
 Put the command beside a count. For anything a command cannot produce — a domain model, a lifecycle, a
 rule — **cite the path you read it from**; a file path beside a state machine is as verifiable as a

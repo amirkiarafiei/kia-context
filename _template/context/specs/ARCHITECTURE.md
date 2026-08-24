@@ -34,16 +34,21 @@ reader could get for themselves in one command.
 
 A reader should be able to answer all of these from this file alone, without opening the code:
 
-- **The nouns.** What things does this system deal with, what does each one mean, and how do they relate
-  to each other? Draw the model if a picture is clearer than a list.
-- **The states.** If any of those things move through states, what are the states, what moves them, and
-  who is allowed to move them? A state machine that lives only in the code is the single most common
-  thing missing from a file like this.
-- **The rules.** What does the system refuse to do, and where is that refusal enforced?
-- **The flows.** For the two or three things this system exists to do, what happens end to end — which
-  parts are involved, in what order, and what is stored on the way?
-- **The contracts.** What does it expose to the outside, and what does it depend on?
-- **The words.** If this project or its domain uses terms an outsider would misread, define them.
+- What things does this system deal with, what does each one mean, and how do they relate to each other?
+  Draw the model if a picture is clearer than a list.
+- If any of those things move through states, what are the states, what moves them, and who is allowed
+  to? A state machine that lives only in the code is the most common thing missing from a file like this.
+- What does the system refuse to do, and where is that refusal enforced?
+- For the two or three things this system exists to do, what happens end to end — which parts are
+  involved, in what order, and what is stored along the way?
+- What does it expose to the outside, and what does it depend on?
+- Are there terms an outsider would misread?
+
+**These are questions to answer, not headings to copy.** Name your sections after *this project's own
+subject matter*. A catalog gets *"The offering lifecycle"*, never *"The states"*. A compiler gets
+*"From source to bytecode"*, never *"The flows"*. How many sections there are, what they are called and
+what order they come in is yours to decide — the questions are only a way of checking you did not stop
+too early.
 
 **Length is set by the system, not by a target.** A distributed service fleet needs far more than a CLI
 tool. If a section needs five paragraphs to be true, write five. If it needs a table of thirty rows,
@@ -70,9 +75,10 @@ Where the code contradicts a README or a comment, the code wins — and say so.
 | [3](#3-repo-layout) | Repo layout |
 
 Only three sections, because these three are nearly the only ones every project has. **They are the
-starting point, not the whole file** — the questions above are what make it useful, and answering them
-means adding sections. Domain model, lifecycle, data, runtime, interfaces, jobs, testing, deployment,
-invariants, security: add what this project has, in whatever order makes sense, and update this table.
+starting point, not the whole file** — answering the questions above means adding more, and what those
+are called depends entirely on the project. Domain, lifecycle, data, runtime, interfaces, jobs, testing,
+deployment, invariants, security are the kinds of thing that often show up; none of them is a required
+heading. Work out what this project needs, name it in this project's own words, and update this table.
 
 ---
 
@@ -120,5 +126,5 @@ invariants, security: add what this project has, in whatever order makes sense, 
 
 ---
 
-> Everything past this point is yours. The questions under *How deep to go* are not answered yet by the
-> three sections above — go and answer them.
+> Everything past this point is yours — the sections, their names and their order. The three above do not
+> answer the questions under *How deep to go*. Work out what this project needs and write it.
