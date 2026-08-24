@@ -1,3 +1,5 @@
+<img src="assets/banner.jpeg" alt="kia-context — loop-friendly project context" width="70%" />
+
 # kia-context
 
 **A Loop Engineering-friendly Kit of Markdown Files to Maintain Project Context for/by Agents. Nothing More!**
