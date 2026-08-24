@@ -1,23 +1,22 @@
 #!/usr/bin/env bash
 #
-# kiacontext — interactive installer
+# kia-context — interactive installer
 #
 #   Local:  ./install.sh
 #   Remote: curl -sSL https://raw.githubusercontent.com/amirkiarafiei/kia-context/main/install.sh | bash
 #
 # What it does, and nothing else:
 #   1. scaffolds context/ and docs/ into this repository, never overwriting a file
-#   2. writes the harness instructions into AGENTS.md (and CLAUDE.md / GEMINI.md), between markers
+#   2. writes the agent instructions into AGENTS.md (and CLAUDE.md / GEMINI.md), between markers
 #   3. installs three project-scoped skills for the agents you pick
 #
 # Portability: targets bash 3.2 (macOS default) — no associative arrays, no mapfile, no ${x,,}.
-# All input is read from /dev/tty so it still works when piped from curl.
+# All keyboard input is read from /dev/tty so it still works when piped from curl.
 
 set -o pipefail
 
 REPO_RAW_URL="https://raw.githubusercontent.com/amirkiarafiei/kia-context/main"
 VERSION="v0.1"
-
 BEGIN_MARK="<!-- kiacontext:begin -->"
 END_MARK="<!-- kiacontext:end -->"
 
@@ -25,14 +24,13 @@ END_MARK="<!-- kiacontext:end -->"
 
 # Agents, their PROJECT-scoped skills directory, and the instruction file they read.
 # Only Claude Code's path is documented by its vendor; the rest follow the same
-# convention. Pick "Other" if yours differs.
+# convention. Use "Other" (or --skills-dir) if yours differs.
 AGENT_NAMES=(
   "Claude Code" "Cursor" "Gemini CLI" "Codex" "GitHub Copilot"
-  "OpenCode" "Qoder" "Kiro" "Other (custom path)"
+  "OpenCode" "Qoder" "Kiro" "Other"
 )
 AGENT_SLUGS=(
-  "claude" "cursor" "gemini" "codex" "copilot"
-  "opencode" "qoder" "kiro" "other"
+  "claude" "cursor" "gemini" "codex" "copilot" "opencode" "qoder" "kiro" "other"
 )
 AGENT_SKILL_DIRS=(
   ".claude/skills" ".cursor/skills" ".gemini/skills" ".agents/skills" ".copilot/skills"
@@ -43,7 +41,6 @@ AGENT_DOCS=(
   "AGENTS.md" "AGENTS.md" "AGENTS.md" "AGENTS.md"
 )
 
-# Files the template ships. Destination is the path with "_template/" removed.
 TEMPLATE_FILES=(
   "_template/context/INDEX.md"
   "_template/context/genesis/SEED.md"
@@ -61,97 +58,271 @@ TEMPLATE_FILES=(
 )
 SKILLS=( "kia-context-help" "kia-context-init" "kia-context-sync" )
 
-# ---------------------------------------------------------------- output ---
+# ---------------------------------------------------------- capabilities ---
 
-if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
-  B=$'\033[1m'; R=$'\033[0m'; DIM=$'\033[2m'
-  GRN=$'\033[32m'; YEL=$'\033[33m'; RED=$'\033[31m'; CYA=$'\033[36m'
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ] && [ "${TERM:-dumb}" != "dumb" ]; then
+  B=$'\033[1m'; DIM=$'\033[2m'; R=$'\033[0m'; REV=$'\033[7m'
+  RED=$'\033[31m'; GRN=$'\033[32m'; YEL=$'\033[33m'
+  BLU=$'\033[34m'; CYN=$'\033[36m'; GRY=$'\033[90m'
 else
-  B=""; R=""; DIM=""; GRN=""; YEL=""; RED=""; CYA=""
+  B=""; DIM=""; R=""; REV=""; RED=""; GRN=""; YEL=""; BLU=""; CYN=""; GRY=""
 fi
-TICK="+"; SKIP="-"; CROSS="x"
+
+if printf '%s' "${LC_ALL:-${LC_CTYPE:-${LANG:-}}}" | grep -qi 'utf-*8'; then
+  LINE="─"; CHK="▣"; BOX="□"; ARROW="›"; TICK="✓"; CROSS="✗"; DOT="·"
+  TL="╭"; TR="╮"; BL="╰"; BR="╯"; VT="│"
+else
+  LINE="-"; CHK="[x]"; BOX="[ ]"; ARROW=">"; TICK="+"; CROSS="x"; DOT="."
+  TL="+"; TR="+"; BL="+"; BR="+"; VT="|"
+fi
+
+term_cols() { local c; c=$(tput cols 2>/dev/null) || c=80; [ "$c" -gt 0 ] 2>/dev/null || c=80; printf '%s' "$c"; }
+term_rows() { local r; r=$(tput lines 2>/dev/null) || r=24; [ "$r" -gt 0 ] 2>/dev/null || r=24; printf '%s' "$r"; }
+
+hr() {
+  local w i out=""
+  w=$(term_cols); [ "$w" -gt 74 ] && w=74
+  i=0; while [ "$i" -lt "$w" ]; do out="$out$LINE"; i=$((i + 1)); done
+  printf '  %s%s%s\n' "$GRY" "$out" "$R"
+}
 
 say()  { printf '  %s\n' "$*"; }
-good() { printf '  %s%s%s %s\n' "$GRN" "$TICK" "$R" "$*"; }
-skip() { printf '  %s%s %s%s\n'  "$DIM" "$SKIP" "$*" "$R"; }
-warn() { printf '  %s%s%s %s\n' "$YEL" "!" "$R" "$*"; }
-bad()  { printf '  %s%s%s %s\n' "$RED" "$CROSS" "$R" "$*" >&2; }
-hr()   { printf '  %s────────────────────────────────────────────────────────%s\n' "$DIM" "$R"; }
+step() { printf '\n  %s%s%s\n\n' "$B" "$*" "$R"; }
+ok()   { printf '   %s%s%s %s\n' "$GRN" "$TICK" "$R" "$*"; }
+kept() { printf '   %s%s %s%s\n'  "$GRY" "$DOT" "$*" "$R"; }
+warn() { printf '   %s!%s %s\n' "$YEL" "$R" "$*"; }
+bad()  { printf '   %s%s%s %s\n' "$RED" "$CROSS" "$R" "$*" >&2; }
+
+banner() {
+  local w; w=$(term_cols)
+  printf '\n'
+  if [ "$w" -ge 68 ]; then
+    printf '%s' "$CYN$B"
+    cat <<'ART'
+  ██╗  ██╗██╗ █████╗
+  ██║ ██╔╝██║██╔══██╗
+  █████╔╝ ██║███████║
+  ██╔═██╗ ██║██╔══██║
+  ██║  ██╗██║██║  ██║
+  ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝
+ART
+    printf '%s\n%s' "$R" "$BLU"
+    cat <<'ART'
+   ██████╗ ██████╗ ███╗   ██╗████████╗███████╗██╗  ██╗████████╗
+  ██╔════╝██╔═══██╗████╗  ██║╚══██╔══╝██╔════╝╚██╗██╔╝╚══██╔══╝
+  ██║     ██║   ██║██╔██╗ ██║   ██║   █████╗   ╚███╔╝    ██║
+  ██║     ██║   ██║██║╚██╗██║   ██║   ██╔══╝   ██╔██╗    ██║
+  ╚██████╗╚██████╔╝██║ ╚████║   ██║   ███████╗██╔╝ ██╗   ██║
+   ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═╝   ╚═╝
+ART
+    printf '%s' "$R"
+  else
+    printf '  %s%skia-context%s\n' "$B" "$CYN" "$R"
+  fi
+  printf '\n  %sA kit of markdown files to maintain project context for/by agents.%s\n' "$DIM" "$R"
+  printf '  %sNothing more.%s  %s%s%s\n\n' "$DIM" "$R" "$GRY" "$VERSION" "$R"
+  hr
+}
 
 # ----------------------------------------------------------------- input ---
 
-# A readable /dev/tty is not enough — in a non-interactive runner it exists but
-# returns EOF immediately, which would silently pick every default. Require a
-# real terminal on stdin or stdout as well.
 TTY=/dev/tty
 HAVE_TTY=0
 if [ -r "$TTY" ] && { [ -t 0 ] || [ -t 1 ]; }; then HAVE_TTY=1; else TTY=/dev/null; fi
 
-ask() {  # ask <prompt> <default> -> ANSWER
-  local prompt=$1 default=$2 reply=""
-  if [ "$ASSUME_YES" = "1" ]; then
-    ANSWER=$default
-    printf '  %s%s%s %s%s%s\n' "$B" "$prompt" "$R" "$DIM" "$default" "$R"
-    return 0
+CURSOR_HIDDEN=0
+hide_cursor() { [ -t 1 ] || return 0; printf '\033[?25l'; CURSOR_HIDDEN=1; }
+show_cursor() { [ "$CURSOR_HIDDEN" -eq 1 ] && printf '\033[?25h'; CURSOR_HIDDEN=0; return 0; }
+cleanup() { show_cursor; }
+on_interrupt() { show_cursor; printf '\n'; bad "Cancelled."; exit 130; }
+trap cleanup EXIT
+trap on_interrupt INT TERM
+
+read_key() {
+  local k a b seq=""
+  IFS= read -rsn1 k <"$TTY" 2>/dev/null || { printf 'eof'; return; }
+  case "$k" in
+    "")    printf 'enter'; return ;;
+    " ")   printf 'space'; return ;;
+    $'\t') printf 'tab';   return ;;
+    $'\033')
+      if ! IFS= read -rsn1 -t 1 a <"$TTY" 2>/dev/null; then printf 'esc'; return; fi
+      case "$a" in "[" | "O") ;; *) printf 'esc'; return ;; esac
+      while IFS= read -rsn1 -t 1 b <"$TTY" 2>/dev/null; do
+        seq="$seq$b"; case "$b" in [A-Za-z~]) break ;; esac
+      done
+      case "$seq" in
+        A) printf 'up' ;;  B) printf 'down' ;;
+        C) printf 'right';; D) printf 'left' ;;
+        H|"1~") printf 'home' ;; F|"4~") printf 'end' ;;
+        *) printf 'other' ;;
+      esac
+      return ;;
+    *) printf '%s' "$k"; return ;;
+  esac
+}
+
+rewind() { local n=$1; [ "$n" -gt 0 ] && printf '\033[%dA\033[J' "$n"; return 0; }
+
+BTN_W=38
+draw_button() {
+  local label=$1 focused=$2 enabled=$3
+  local len pad l r bar color content i=0
+  len=${#label}
+  if [ "$len" -gt "$BTN_W" ]; then label=${label:0:$BTN_W}; len=$BTN_W; fi
+  pad=$(( (BTN_W - len) / 2 ))
+  l=$(printf '%*s' "$pad" ''); r=$(printf '%*s' $(( BTN_W - len - pad )) '')
+  content="${l}${label}${r}"
+  bar=""; while [ "$i" -lt "$BTN_W" ]; do bar="${bar}${LINE}"; i=$((i + 1)); done
+
+  if [ "$focused" -eq 1 ]; then
+    if [ "$enabled" -eq 1 ]; then color="$GRN$B"; else color="$YEL$B"; fi
+  elif [ "$enabled" -eq 1 ]; then color="$B"; else color="$GRY"; fi
+
+  printf '     %s%s%s%s%s\n' "$color" "$TL" "$bar" "$TR" "$R"
+  if [ "$focused" -eq 1 ]; then
+    printf '   %s %s%s%s%s%s%s%s\n' "$ARROW" "$color" "$VT" "$REV" "$content" "$R$color" "$VT" "$R"
+  else
+    printf '     %s%s%s%s%s\n' "$color" "$VT" "$content" "$VT" "$R"
   fi
-  printf '  %s%s%s %s[%s]%s ' "$B" "$prompt" "$R" "$DIM" "$default" "$R"
+  printf '     %s%s%s%s%s\n' "$color" "$BL" "$bar" "$BR" "$R"
+}
+
+# The one question. Toggle agents, then press the button.
+# Sets PICKED to a space-separated list of indices; returns 1 if cancelled.
+PICKED=""
+menu_agents() {
+  local n=${#AGENT_NAMES[@]}
+  local cur=0 drawn=0 i key count marks=""
+
+  i=0; while [ "$i" -lt "$n" ]; do marks="${marks}0"; i=$((i + 1)); done
+  marks="1${marks:1}"          # Claude Code preselected — the common case
+
+  hide_cursor
+  while :; do
+    count=0; i=0
+    while [ "$i" -lt "$n" ]; do
+      [ "${marks:$i:1}" = "1" ] && count=$((count + 1)); i=$((i + 1))
+    done
+
+    rewind "$drawn"; drawn=0
+    printf '\n'; drawn=$((drawn + 1))
+    printf '  %sWhich agents work in this repository?%s   %s%d selected%s\n' \
+      "$B" "$R" "$DIM" "$count" "$R"; drawn=$((drawn + 1))
+    printf '  %sEach one gets the three skills, project-scoped.%s\n' "$DIM" "$R"; drawn=$((drawn + 1))
+    printf '\n'; drawn=$((drawn + 1))
+
+    i=0
+    while [ "$i" -lt "$n" ]; do
+      local box name dir
+      if [ "${marks:$i:1}" = "1" ]; then box="${GRN}${CHK}${R}"; else box="${GRY}${BOX}${R}"; fi
+      name=${AGENT_NAMES[$i]}; dir=${AGENT_SKILL_DIRS[$i]}
+      [ -z "$dir" ] && dir="you will be asked for the path"
+      if [ "$i" -eq "$cur" ]; then
+        printf '   %s %s %s%-16s%s %s%s%s\n' "$ARROW" "$box" "$CYN$B" "$name" "$R" "$DIM" "$dir" "$R"
+      else
+        printf '     %s %-16s %s%s%s\n' "$box" "$name" "$GRY" "$dir" "$R"
+      fi
+      drawn=$((drawn + 1)); i=$((i + 1))
+    done
+
+    printf '\n'; drawn=$((drawn + 1))
+    if [ "$count" -gt 0 ]; then
+      if [ "$cur" -eq "$n" ]; then draw_button "Install" 1 1; else draw_button "Install" 0 1; fi
+    else
+      if [ "$cur" -eq "$n" ]; then draw_button "Pick at least one agent" 1 0; else draw_button "Install" 0 0; fi
+    fi
+    drawn=$((drawn + 3))
+
+    printf '\n'; drawn=$((drawn + 1))
+    printf '     %s↑/↓ move %s space or enter toggle %s a all %s n none%s\n' \
+      "$DIM" "$DOT" "$DOT" "$DOT" "$R"; drawn=$((drawn + 1))
+    printf '     %spast the last agent is the Install button %s q cancel%s\n' \
+      "$DIM" "$DOT" "$R"; drawn=$((drawn + 1))
+
+    key=$(read_key)
+    case "$key" in
+      up|k)   cur=$((cur - 1)); [ "$cur" -lt 0 ] && cur=$n ;;
+      down|j) cur=$((cur + 1)); [ "$cur" -gt "$n" ] && cur=0 ;;
+      home)   cur=0 ;;
+      end)    cur=$n ;;
+      a) i=0; marks=""; while [ "$i" -lt "$n" ]; do marks="${marks}1"; i=$((i + 1)); done ;;
+      n) i=0; marks=""; while [ "$i" -lt "$n" ]; do marks="${marks}0"; i=$((i + 1)); done ;;
+      space|left|right)
+        if [ "$cur" -lt "$n" ]; then
+          if [ "${marks:$cur:1}" = "1" ]; then marks="${marks:0:$cur}0${marks:$((cur+1))}"
+          else marks="${marks:0:$cur}1${marks:$((cur+1))}"; fi
+        fi ;;
+      enter)
+        if [ "$cur" -lt "$n" ]; then
+          if [ "${marks:$cur:1}" = "1" ]; then marks="${marks:0:$cur}0${marks:$((cur+1))}"
+          else marks="${marks:0:$cur}1${marks:$((cur+1))}"; fi
+        elif [ "$count" -gt 0 ]; then
+          rewind "$drawn"; show_cursor
+          PICKED=""; i=0
+          while [ "$i" -lt "$n" ]; do
+            [ "${marks:$i:1}" = "1" ] && PICKED="$PICKED $i"
+            i=$((i + 1))
+          done
+          return 0
+        fi ;;
+      q|esc|eof) show_cursor; return 1 ;;
+    esac
+  done
+}
+
+ask_path() {  # ask_path <prompt> <default> -> ANSWER
+  local prompt=$1 default=$2 reply=""
+  printf '   %s%s%s %s[%s]%s ' "$B" "$prompt" "$R" "$DIM" "$default" "$R"
+  show_cursor
   IFS= read -r reply <"$TTY" || reply=""
   [ -z "$reply" ] && reply=$default
+  case "$reply" in "~") reply="$HOME" ;; "~/"*) reply="$HOME/${reply#\~/}" ;; esac
   ANSWER=$reply
 }
 
-# --------------------------------------------------------------- fetching ---
+# -------------------------------------------------------------- fetching ---
 
 MODE="local"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || echo .)"
 [ -d "$SCRIPT_DIR/_template" ] || MODE="remote"
 
-fetch() {  # fetch <url> <dest>
+fetch() {
   if command -v curl >/dev/null 2>&1; then curl -fsSL "$1" -o "$2"
   elif command -v wget >/dev/null 2>&1; then wget -qO "$2" "$1"
   else return 1; fi
 }
-
-get_file() {  # get_file <repo-relative-path> <dest>  -> 0 ok
+get_file() {
   local src=$1 dest=$2
   mkdir -p "$(dirname "$dest")" || return 1
-  if [ "$MODE" = "local" ]; then
-    [ -f "$SCRIPT_DIR/$src" ] || return 1
-    cp "$SCRIPT_DIR/$src" "$dest"
-  else
-    fetch "$REPO_RAW_URL/$src" "$dest"
-  fi
+  if [ "$MODE" = "local" ]; then [ -f "$SCRIPT_DIR/$src" ] || return 1; cp "$SCRIPT_DIR/$src" "$dest"
+  else fetch "$REPO_RAW_URL/$src" "$dest"; fi
 }
-
-read_file() {  # read_file <repo-relative-path> -> stdout
+read_file() {
   if [ "$MODE" = "local" ]; then cat "$SCRIPT_DIR/$1" 2>/dev/null
-  else
-    local tmp; tmp=$(mktemp) || return 1
-    fetch "$REPO_RAW_URL/$1" "$tmp" && cat "$tmp"; rm -f "$tmp"
-  fi
+  else local tmp; tmp=$(mktemp) || return 1; fetch "$REPO_RAW_URL/$1" "$tmp" && cat "$tmp"; rm -f "$tmp"; fi
 }
 
-# ------------------------------------------------------------------ steps ---
+# ----------------------------------------------------------------- flags ---
 
 usage() {
   cat <<USAGE
-kiacontext installer $VERSION
+kia-context installer $VERSION
 
-  ./install.sh              interactive
-  ./install.sh --yes        accept every default, no prompts
+  ./install.sh              interactive — one question, then it installs
   ./install.sh --dry-run    show what would happen, write nothing
   ./install.sh --help       this message
 
 Non-interactive:
+  --yes                     accept defaults, no prompts
   --dir PATH                where to install (default: the git root, else \$PWD)
-  --agents LIST             comma- or space-separated. Slugs or menu numbers:
+  --agents LIST             comma- or space-separated slugs:
                             claude cursor gemini codex copilot opencode qoder kiro
   --skills-dir PATH         project-scoped skills directory, for an agent not listed
 
-  ./install.sh --yes --agents claude,cursor --dir .
+  ./install.sh --yes --agents claude,cursor
 
-Installs a kit of Markdown files that keeps a project's context for and by agents.
-Existing files are never overwritten.
+Existing files are never overwritten. Re-running is safe.
 USAGE
 }
 
@@ -169,135 +340,107 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-printf '\n  %skiacontext%s %s%s%s\n' "$B$CYA" "$R" "$DIM" "$VERSION" "$R"
-say "${DIM}A kit of Markdown files to maintain project context for and by agents.${R}"
-if [ "$HAVE_TTY" = "0" ] && [ "$ASSUME_YES" = "0" ]; then
-  warn "No terminal available — using defaults. Pass --dir / --agents to choose, or --yes to silence this."
-  ASSUME_YES=1
-fi
+# ------------------------------------------------------------------ main ---
 
-printf '\n'; hr; printf '\n'
+banner
 
-# 1. Where -------------------------------------------------------------------
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
 [ -n "$ROOT" ] || ROOT="$PWD"
-if [ -n "$OPT_DIR" ]; then ROOT="$OPT_DIR"; say "${B}Directory${R} ${DIM}$ROOT${R}"
-else ask "Install into which directory?" "$ROOT"; ROOT="$ANSWER"; fi
+[ -n "$OPT_DIR" ] && ROOT="$OPT_DIR"
 case "$ROOT" in "~") ROOT="$HOME" ;; "~/"*) ROOT="$HOME/${ROOT#\~/}" ;; esac
 if [ ! -d "$ROOT" ]; then bad "Not a directory: $ROOT"; exit 1; fi
-printf '\n'
+printf '  %sinto%s %s\n' "$DIM" "$R" "$ROOT"
 
-# 2. Which agents ------------------------------------------------------------
+# --- the one question ---
 if [ -n "$OPT_AGENTS" ]; then
-  PICKED="$(printf '%s' "$OPT_AGENTS" | tr ',' ' ')"
-  say "${B}Agents${R} ${DIM}$PICKED${R}"
-else
-  say "${B}Which agents work in this repository?${R}"
-  say "${DIM}Skills are installed for each one, project-scoped.${R}"
-  printf '\n'
-  i=0
-  while [ $i -lt ${#AGENT_NAMES[@]} ]; do
-    n=$((i+1))
-    if [ -n "${AGENT_SKILL_DIRS[$i]}" ]; then
-      printf '    %s%d%s  %-10s %-20s %s%s%s\n' "$B" "$n" "$R" "${AGENT_SLUGS[$i]}" "${AGENT_NAMES[$i]}" "$DIM" "${AGENT_SKILL_DIRS[$i]}" "$R"
-    else
-      printf '    %s%d%s  %-10s %s\n' "$B" "$n" "$R" "${AGENT_SLUGS[$i]}" "${AGENT_NAMES[$i]}"
-    fi
-    i=$((i+1))
+  PICKED=""
+  for tok in $(printf '%s' "$OPT_AGENTS" | tr ',' ' '); do
+    idx=-1; j=0
+    while [ $j -lt ${#AGENT_SLUGS[@]} ]; do
+      [ "${AGENT_SLUGS[$j]}" = "$tok" ] && idx=$j && break
+      j=$((j + 1))
+    done
+    case "$tok" in ''|*[!0-9]*) ;; *) idx=$((tok - 1)) ;; esac
+    if [ "$idx" -lt 0 ] || [ "$idx" -ge ${#AGENT_NAMES[@]} ]; then bad "Unknown agent: $tok"; exit 1; fi
+    PICKED="$PICKED $idx"
   done
-  printf '\n'
-  ask "Numbers or slugs, separated by spaces or commas" "1"
-  PICKED="$(printf '%s' "$ANSWER" | tr ',' ' ')"
+elif [ "$ASSUME_YES" = "1" ] || [ "$HAVE_TTY" = "0" ]; then
+  [ "$HAVE_TTY" = "0" ] && [ "$ASSUME_YES" = "0" ] && \
+    warn "No terminal — defaulting to Claude Code. Use --agents to choose."
+  PICKED="0"
+else
+  if ! menu_agents; then printf '\n'; bad "Cancelled."; exit 130; fi
 fi
-printf '\n'; hr; printf '\n'
 
-SEL_DIRS=""; SEL_DOCS="AGENTS.md"; SEL_NAMES=""
-for n in $PICKED; do
-  idx=-1
-  case "$n" in
-    ''|*[!0-9]*)
-      j=0
-      while [ $j -lt ${#AGENT_SLUGS[@]} ]; do
-        [ "${AGENT_SLUGS[$j]}" = "$n" ] && idx=$j && break
-        j=$((j+1))
-      done
-      if [ "$idx" -lt 0 ]; then bad "Unknown agent: $n  (try --help)"; exit 1; fi ;;
-    *) idx=$((n-1)) ;;
-  esac
-  if [ "$idx" -lt 0 ] || [ "$idx" -ge ${#AGENT_NAMES[@]} ]; then bad "Out of range: $n"; exit 1; fi
+SEL_DIRS=""; SEL_DOCS="AGENTS.md"; SEL_LABEL=""
+for idx in $PICKED; do
   d="${AGENT_SKILL_DIRS[$idx]}"
   if [ -z "$d" ]; then
     if [ -n "$OPT_SKILLS_DIR" ]; then d="$OPT_SKILLS_DIR"
-    else ask "Project-scoped skills directory (relative to the repo)" ".claude/skills"; d="$ANSWER"; fi
+    elif [ "$HAVE_TTY" = "1" ]; then printf '\n'; ask_path "Skills directory for \"Other\"" ".claude/skills"; d="$ANSWER"
+    else d=".claude/skills"; fi
   fi
   SEL_DIRS="$SEL_DIRS $d"
-  SEL_NAMES="$SEL_NAMES|${AGENT_NAMES[$idx]}"
+  SEL_LABEL="$SEL_LABEL${SEL_LABEL:+, }${AGENT_NAMES[$idx]}"
   case " $SEL_DOCS " in *" ${AGENT_DOCS[$idx]} "*) ;; *) SEL_DOCS="$SEL_DOCS ${AGENT_DOCS[$idx]}" ;; esac
 done
+printf '  %sfor%s  %s\n' "$DIM" "$R" "$SEL_LABEL"
+printf '\n'; hr
 
-# 3. Scaffold ----------------------------------------------------------------
-say "${B}context/ and docs/${R}"
+# --- 1. scaffold ---
+step "Context files"
 created=0; existed=0
 for src in "${TEMPLATE_FILES[@]}"; do
-  rel="${src#_template/}"
-  dest="$ROOT/$rel"
-  if [ -f "$dest" ]; then skip "$rel  ${DIM}(exists, left alone)${R}"; existed=$((existed+1)); continue; fi
-  if [ "$DRY" = "1" ]; then good "$rel  ${DIM}(would create)${R}"; created=$((created+1)); continue; fi
-  if get_file "$src" "$dest"; then good "$rel"; created=$((created+1)); else bad "$rel — could not fetch"; fi
+  rel="${src#_template/}"; dest="$ROOT/$rel"
+  if [ -f "$dest" ]; then kept "$rel"; existed=$((existed + 1)); continue; fi
+  if [ "$DRY" = "1" ]; then ok "$rel"; created=$((created + 1)); continue; fi
+  if get_file "$src" "$dest"; then ok "$rel"; created=$((created + 1)); else bad "$rel — could not fetch"; fi
 done
-printf '\n'
+[ "$existed" -gt 0 ] && printf '\n   %s%d file(s) already existed and were left alone.%s\n' "$GRY" "$existed" "$R"
 
-# 4. Instruction files -------------------------------------------------------
-say "${B}Agent instructions${R}"
+# --- 2. instructions ---
+step "Agent instructions"
 BLOCK="$(read_file _template/AGENTS.harness.md | sed '1,/-->/d' | sed '/./,$!d')"
 if [ -z "$BLOCK" ]; then bad "Could not read the harness block."; exit 1; fi
-
 for doc in $SEL_DOCS; do
   target="$ROOT/$doc"
+  had=0; [ -f "$target" ] && grep -qF "$BEGIN_MARK" "$target" 2>/dev/null && had=1
   if [ "$DRY" = "1" ]; then
-    if [ -f "$target" ] && grep -qF "$BEGIN_MARK" "$target" 2>/dev/null
-      then good "$doc  ${DIM}(would refresh the kiacontext block)${R}"
-      else good "$doc  ${DIM}(would append the kiacontext block)${R}"; fi
+    if [ "$had" = "1" ]; then ok "$doc  ${GRY}refresh${R}"; else ok "$doc  ${GRY}append${R}"; fi
     continue
   fi
-  if [ -f "$target" ] && grep -qF "$BEGIN_MARK" "$target" 2>/dev/null; then
+  if [ "$had" = "1" ]; then
     tmp="$(mktemp)"
     awk -v b="$BEGIN_MARK" -v e="$END_MARK" '
       index($0,b){skipping=1} !skipping{print} index($0,e){skipping=0}' "$target" > "$tmp"
     { cat "$tmp"; printf '%s\n\n%s\n\n%s\n' "$BEGIN_MARK" "$BLOCK" "$END_MARK"; } > "$target"
-    rm -f "$tmp"
-    good "$doc  ${DIM}(block refreshed)${R}"
+    rm -f "$tmp"; ok "$doc  ${GRY}block refreshed${R}"
   else
     [ -f "$target" ] && printf '\n' >> "$target"
     printf '%s\n\n%s\n\n%s\n' "$BEGIN_MARK" "$BLOCK" "$END_MARK" >> "$target"
-    good "$doc  ${DIM}(block appended)${R}"
+    ok "$doc"
   fi
 done
-printf '\n'
 
-# 5. Skills ------------------------------------------------------------------
-say "${B}Skills${R}"
+# --- 3. skills ---
+step "Skills"
 for d in $SEL_DIRS; do
   for s in "${SKILLS[@]}"; do
     dest="$ROOT/$d/$s/SKILL.md"
-    if [ "$DRY" = "1" ]; then good "$d/$s/SKILL.md  ${DIM}(would install)${R}"; continue; fi
-    if get_file "skills/$s/SKILL.md" "$dest"; then good "$d/$s/SKILL.md"
-    else bad "$d/$s — could not fetch"; fi
+    if [ "$DRY" = "1" ]; then ok "$d/$s"; continue; fi
+    if get_file "skills/$s/SKILL.md" "$dest"; then ok "$d/$s"; else bad "$d/$s — could not fetch"; fi
   done
 done
-printf '\n'; hr; printf '\n'
 
-# 6. What next ---------------------------------------------------------------
+# --- done ---
+printf '\n'; hr; printf '\n'
 if [ "$DRY" = "1" ]; then
-  say "${B}Dry run — nothing was written.${R}"
+  printf '  %s%s Dry run — nothing was written.%s\n' "$YEL$B" "$ARROW" "$R"
 else
-  say "${B}Done.${R} $created file(s) created, $existed left alone."
+  printf '  %s%s Installed.%s %s%d created, %d left alone%s\n' "$GRN$B" "$TICK" "$R" "$DIM" "$created" "$existed" "$R"
 fi
-printf '\n'
-say "Next, in your agent:"
-say "  ${CYA}/kia-context-init${R}   fill it in — new project or half-built, it handles both"
-say "  ${CYA}/kia-context-help${R}   what each file is for"
-say "  ${CYA}/kia-context-sync${R}   catch the files up after work has happened"
-printf '\n'
-say "${DIM}Nothing here is mandatory. Reshape any file; only the frontmatter is fixed.${R}"
-printf '\n'
+printf '\n  %sNext, in your agent:%s\n\n' "$B" "$R"
+printf '     %s/kia-context-init%s   %sfill it in — new project or half-built, it handles both%s\n' "$CYN$B" "$R" "$DIM" "$R"
+printf '     %s/kia-context-help%s   %swhat each file is for%s\n' "$CYN$B" "$R" "$DIM" "$R"
+printf '     %s/kia-context-sync%s   %scatch the files up after work has happened%s\n' "$CYN$B" "$R" "$DIM" "$R"
+printf '\n  %sNothing here is mandatory. Reshape any file; only the frontmatter is fixed.%s\n\n' "$GRY" "$R"
