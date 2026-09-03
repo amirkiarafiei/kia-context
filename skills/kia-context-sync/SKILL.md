@@ -13,8 +13,8 @@ somebody wants a deliberate pass before handing the project over.
 
 ```bash
 git log --oneline --no-merges -30
-git log -1 --format=%ad -- context/          # when the context last moved
-git diff --stat HEAD~10..HEAD -- . ':!context' ':!docs'
+git log -1 --format=%ad -- kia-context/      # when the context last moved
+git diff --stat HEAD~10..HEAD -- . ':!kia-context' ':!docs'
 ```
 
 Compare what the code did against what the files say happened. The gap is the work.

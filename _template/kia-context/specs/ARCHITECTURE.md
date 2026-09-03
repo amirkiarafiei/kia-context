@@ -23,7 +23,7 @@ last_updated: "{{YYYY-MM-DD}}"
 > those six fields are what make this file part of kiacontext.
 
 > **Scope.** What the system is and how it works. *Why* it is built this way, and what was rejected:
-> `context/logs/BRAINSTORM.md`. A domain rule that sounds like a product promise still belongs here if
+> `kia-context/logs/BRAINSTORM.md`. A domain rule that sounds like a product promise still belongs here if
 > it describes how the system is built — see *Where a finding goes* in `AGENTS.md`.
 
 ## How deep to go

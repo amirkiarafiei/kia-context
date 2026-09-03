@@ -1,6 +1,6 @@
 ---
 name: kia-context-help
-description: Explains kiacontext in plain language — what the context/ and docs/ folders are, what each file is for, where a given piece of information belongs, and how to work with the system day to day. Use when someone asks what kiacontext is, what one of these files is for, where something should be written down, or how this system is meant to be used.
+description: Explains kiacontext in plain language — what the kia-context/ and docs/ folders are, what each file is for, where a given piece of information belongs, and how to work with the system day to day. Use when someone asks what kiacontext is, what one of these files is for, where something should be written down, or how this system is meant to be used.
 allowed-tools: Read, Glob
 ---
 
@@ -17,12 +17,12 @@ knows where to put things without being told each time.
 If the human asked something specific — *"what goes in BRAINSTORM?"*, *"where do I write this decision?"* —
 answer that in two or three sentences and stop. Only give the full tour below if they asked for one.
 
-Read `context/INDEX.md` before answering; this project's version may differ from the default.
+Read `kia-context/INDEX.md` before answering; this project's version may differ from the default.
 
 ## The whole system
 
 ```
-context/           the agent reads and writes this
+kia-context/       the agent reads and writes this
   INDEX.md         the map — what exists and where
   genesis/         where the project came from. Written once, at the start
     SEED.md          the first prompts that started it

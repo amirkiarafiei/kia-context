@@ -1,16 +1,16 @@
 <!-- ─────────────────────────────────────────────────────────────────────────
-     kiacontext v0.1 — append this block to the end of AGENTS.md and CLAUDE.md.
+     kiacontext v0.2 — append this block to the end of AGENTS.md and CLAUDE.md.
      Keep the two files byte-for-byte identical, or half the tools read the stale one.
      ───────────────────────────────────────────────────────────────────────── -->
 
 ## kiacontext — this project's memory. Read this before you start work.
 
-This repository carries a folder called `context/`. It is a small set of Markdown files holding what a
+This repository carries a folder called `kia-context/`. It is a small set of Markdown files holding what a
 reader of the code cannot see: what is being built right now, what was already decided and why, what was
 tried and rejected, and what must never change. The layout is a reusable harness called **kiacontext**;
 everything inside it is specific to this project.
 
-> ### 👉 Start by reading `context/INDEX.md`.
+> ### 👉 Start by reading `kia-context/INDEX.md`.
 >
 > It is the map of every other file — one minute of reading, and nothing below makes proper sense
 > without it. **Read it before your first substantial action in a session**, not when you get stuck.
@@ -24,7 +24,7 @@ survives between sessions.
 **They are authoritative.** Where the code and a spec disagree, that is a finding to raise with the
 human — not a document to ignore.
 
-**You write these files. The human decides what goes in them.** Every file under `context/` is written
+**You write these files. The human decides what goes in them.** Every file under `kia-context/` is written
 by an agent, out of a conversation — nobody maintains them by hand. Your job is to keep them true.
 
 **How to use them.**
@@ -47,14 +47,14 @@ by an agent, out of a conversation — nobody maintains them by hand. Your job i
 
 ### The layout
 
-Four levels under `context/`, split by **authority**, not by topic.
+Four levels under `kia-context/`, split by **authority**, not by topic.
 
 | | Path | Who writes | What it is |
 |---|---|---|---|
-| **Map** | `context/INDEX.md` | agent, when files move | What exists, and what points at what |
-| **0** | `context/genesis/` | agent, at t=0 | Where this came from. `SEED.md`, `GENESIS.md` |
-| **1–2** | `context/specs/` | agent, when explicitly refactoring | The law. `MANIFESTO.md`, `ARCHITECTURE.md`, `DESIGN.md` |
-| **3** | `context/logs/` | agent, every session | State. `PROGRESS.md`, `BRAINSTORM.md` |
+| **Map** | `kia-context/INDEX.md` | agent, when files move | What exists, and what points at what |
+| **0** | `kia-context/genesis/` | agent, at t=0 | Where this came from. `SEED.md`, `GENESIS.md` |
+| **1–2** | `kia-context/specs/` | agent, when explicitly refactoring | The law. `MANIFESTO.md`, `ARCHITECTURE.md`, `DESIGN.md` |
+| **3** | `kia-context/logs/` | agent, every session | State. `PROGRESS.md`, `BRAINSTORM.md` |
 
 `docs/` is a different thing entirely: human-facing artifacts, written **only when a human asks for one**.
 Agents do not maintain them and do not need to read them to do the work.

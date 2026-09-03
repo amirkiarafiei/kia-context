@@ -5,7 +5,7 @@ description: >
   an agent: diagrams, sequence flows and plain prose, with enough detail to reason about the system
   without opening it. May go stale between releases without harming anything.
   Produced ON REQUEST. Agents do not maintain this file and do not read it to do the work — the
-  authoritative version is `context/specs/ARCHITECTURE.md`.
+  authoritative version is `kia-context/specs/ARCHITECTURE.md`.
 authority: artifact
 writes: agent, on request
 status: empty

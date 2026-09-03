@@ -6,7 +6,7 @@
 #   Remote: curl -sSL https://raw.githubusercontent.com/amirkiarafiei/kia-context/main/install.sh | bash
 #
 # What it does, and nothing else:
-#   1. scaffolds context/ and docs/ into this repository, never overwriting a file
+#   1. scaffolds kia-context/ and docs/ into this repository, never overwriting a file
 #   2. writes the agent instructions into AGENTS.md (and CLAUDE.md / GEMINI.md), between markers
 #   3. installs three project-scoped skills for the agents you pick
 #
@@ -16,7 +16,7 @@
 set -o pipefail
 
 REPO_RAW_URL="https://raw.githubusercontent.com/amirkiarafiei/kia-context/main"
-VERSION="v0.1"
+VERSION="v0.2"
 BEGIN_MARK="<!-- kiacontext:begin -->"
 END_MARK="<!-- kiacontext:end -->"
 
@@ -42,14 +42,14 @@ AGENT_DOCS=(
 )
 
 TEMPLATE_FILES=(
-  "_template/context/INDEX.md"
-  "_template/context/genesis/SEED.md"
-  "_template/context/genesis/GENESIS.md"
-  "_template/context/specs/MANIFESTO.md"
-  "_template/context/specs/ARCHITECTURE.md"
-  "_template/context/specs/DESIGN.md"
-  "_template/context/logs/PROGRESS.md"
-  "_template/context/logs/BRAINSTORM.md"
+  "_template/kia-context/INDEX.md"
+  "_template/kia-context/genesis/SEED.md"
+  "_template/kia-context/genesis/GENESIS.md"
+  "_template/kia-context/specs/MANIFESTO.md"
+  "_template/kia-context/specs/ARCHITECTURE.md"
+  "_template/kia-context/specs/DESIGN.md"
+  "_template/kia-context/logs/PROGRESS.md"
+  "_template/kia-context/logs/BRAINSTORM.md"
   "_template/docs/SOFTWARE_ARCHITECTURE.md"
   "_template/docs/SYSTEM_ARCHITECTURE.md"
   "_template/docs/DEPLOYMENT.md"
@@ -386,6 +386,25 @@ for idx in $PICKED; do
 done
 printf '  %sfor%s  %s\n' "$DIM" "$R" "$SEL_LABEL"
 printf '\n'; hr
+
+# --- 0. legacy layout ---
+# v0.1 scaffolded into context/. v0.2 renamed it kia-context/, so an older install
+# has real, filled-in content sitting in a folder nothing points at any more. This
+# script only ever adds files, so it will not move it for them — but it says so.
+LEGACY="$ROOT/context"
+if [ -d "$LEGACY" ] && [ -f "$LEGACY/INDEX.md" ]; then
+  step "A v0.1 layout is already here"
+  warn "context/ holds a filled-in harness from kiacontext v0.1."
+  printf '\n     %sv0.2 renamed that folder to kia-context/ — no leading dot, so ripgrep,%s\n' "$DIM" "$R"
+  printf '     %sshell globs and file trees stop hiding the one folder agents must read.%s\n' "$DIM" "$R"
+  printf '\n     %sNothing below touches context/. It will be left exactly as it is, and%s\n' "$DIM" "$R"
+  printf '     %sthe AGENTS.md block will be repointed at kia-context/ — so your existing%s\n' "$DIM" "$R"
+  printf '     %scontent would stop being read. Move it yourself, then re-run:%s\n' "$DIM" "$R"
+  printf '\n       %sgit mv context kia-context%s\n' "$B" "$R"
+  printf '       %sgrep -rn "context/" . --exclude-dir=.git --exclude-dir=node_modules%s\n\n' "$B" "$R"
+  printf '     %sThe grep is rule 2 of the harness: prose links and run-time paths break%s\n' "$DIM" "$R"
+  printf '     %ssilently, and no test suite will find them for you.%s\n' "$DIM" "$R"
+fi
 
 # --- 1. scaffold ---
 step "Context files"

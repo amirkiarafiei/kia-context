@@ -6,7 +6,7 @@ linters, no commands to run.
 ```
 _template/
 ├── AGENTS.harness.md          ← append to AGENTS.md and CLAUDE.md
-├── context/                   ← the agent reads and writes this
+├── kia-context/               ← the agent reads and writes this
 │   ├── INDEX.md
 │   ├── genesis/ SEED.md · GENESIS.md
 │   ├── specs/   MANIFESTO.md · ARCHITECTURE.md · DESIGN.md
@@ -23,7 +23,7 @@ an existing file, and is safe to re-run.
 
 ## Or by hand
 
-1. Copy `context/` and `docs/` into the repository root.
+1. Copy `kia-context/` and `docs/` into the repository root.
 2. Append `AGENTS.harness.md` to the end of `AGENTS.md` and `CLAUDE.md`, then delete it.
    Keep those two files byte-for-byte identical.
 3. Fill in `{{...}}` and today's date. Delete every section the project does not have.
@@ -31,8 +31,8 @@ an existing file, and is safe to re-run.
 
 ## The one thing that matters
 
-`context/` is for the agent. `docs/` is for people, and only when somebody asks for one. A stale
-`docs/` file costs nothing because nothing reads it. **A stale `context/` file gets believed.**
+`kia-context/` is for the agent. `docs/` is for people, and only when somebody asks for one. A stale
+`docs/` file costs nothing because nothing reads it. **A stale `kia-context/` file gets believed.**
 
 ## The frontmatter contract
 
@@ -76,4 +76,4 @@ the rules are the part that was paid for.
 
 ---
 
-`kiacontext v0.1`
+`kiacontext v0.2`

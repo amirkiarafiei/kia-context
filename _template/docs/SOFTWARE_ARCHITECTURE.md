@@ -5,7 +5,7 @@ description: >
   reviewer, a stakeholder. Favours diagrams and worked examples over exhaustive detail, and may go stale
   between releases without harming anything, because nothing depends on it.
   Produced ON REQUEST. Agents do not maintain this file and do not read it to do the work — the
-  authoritative version is `context/specs/ARCHITECTURE.md`.
+  authoritative version is `kia-context/specs/ARCHITECTURE.md`.
 authority: artifact
 writes: agent, on request
 status: empty
@@ -37,4 +37,4 @@ graph LR
 
 ## The decisions worth knowing about
 
-> Point at `context/logs/BRAINSTORM.md` for the full reasoning rather than repeating it here.
+> Point at `kia-context/logs/BRAINSTORM.md` for the full reasoning rather than repeating it here.

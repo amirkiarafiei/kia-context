@@ -10,7 +10,7 @@ writes: agent, when files move
 status: active
 covers: the whole harness
 last_updated: "{{YYYY-MM-DD}}"
-harness: kiacontext v0.1
+harness: kiacontext v0.2
 ---
 
 # 🗺️ INDEX — What each file is, and when to open it
@@ -26,7 +26,7 @@ disagree, the described file wins and this one is the bug.
 |---|---|
 | [1](#1-the-project-in-five-lines) | The project in five lines |
 | [2](#2-phases) | Phases |
-| [3](#3-context--the-harness) | `context/` — the harness |
+| [3](#3-kia-context--the-harness) | `kia-context/` — the harness |
 | [4](#4-docs--human-facing-artifacts) | `docs/` — human-facing artifacts |
 | [5](#5-which-file-answers-which-question) | Which file answers which question |
 | [6](#6-the-numbering-and-why-it-never-restarts) | The numbering, and why it never restarts |
@@ -60,18 +60,18 @@ A project has one phase until it has two. Add a row when a phase opens, and set 
 
 ---
 
-## 3. `context/` — the harness
+## 3. `kia-context/` — the harness
 
 Four levels, split by **authority**, not by topic.
 
-### `context/genesis/` — where this came from · written at t=0, rarely after
+### `kia-context/genesis/` — where this came from · written at t=0, rarely after
 
 | File | What it is |
 |---|---|
 | `SEED.md` | The first prompts that started the project, lightly cleaned. Written once. |
 | `GENESIS.md` | Why the project exists — the catalyst, the parties, the problem at t=0. |
 
-### `context/specs/` — the law · read-only unless explicitly refactoring
+### `kia-context/specs/` — the law · read-only unless explicitly refactoring
 
 | File | What it is |
 |---|---|
@@ -79,7 +79,7 @@ Four levels, split by **authority**, not by topic.
 | `ARCHITECTURE.md` | The technical blueprint — the domain it models and the rules it enforces, as well as the stack and the layout. |
 | `DESIGN.md` | The interface blueprint. Tokens, rationale, and the don'ts with their measurements. **Delete it if this project has no interface** — a library, a service or a pipeline does not need one. |
 
-### `context/logs/` — state · written every session
+### `kia-context/logs/` — state · written every session
 
 | File | What it is |
 |---|---|
@@ -91,7 +91,7 @@ Four levels, split by **authority**, not by topic.
 ## 4. `docs/` — human-facing artifacts
 
 Written **only when a human asks for one**. Agents do not maintain them, and nothing in the harness
-depends on them being current. They may carry diagrams, screenshots and long prose; the `context/` files
+depends on them being current. They may carry diagrams, screenshots and long prose; the `kia-context/` files
 may not.
 
 | File | What it is |
@@ -142,11 +142,11 @@ The only place the link graph is recorded. **Measure it with `grep` — do not a
 
 | If you move or rename… | These point at it |
 |---|---|
-| `context/INDEX.md` | `AGENTS.md`, `CLAUDE.md` |
-| `context/specs/MANIFESTO.md` | {{measured list}} — and its **rules are cited by number from {{n}} files**. Never renumber. |
-| `context/specs/ARCHITECTURE.md` | {{measured list}} |
-| `context/specs/DESIGN.md` | {{measured list}} |
-| `context/logs/PROGRESS.md` | {{measured list}} |
-| `context/logs/BRAINSTORM.md` | {{measured list}} — and its **`D` numbers are cited from {{n}} files** |
+| `kia-context/INDEX.md` | `AGENTS.md`, `CLAUDE.md` |
+| `kia-context/specs/MANIFESTO.md` | {{measured list}} — and its **rules are cited by number from {{n}} files**. Never renumber. |
+| `kia-context/specs/ARCHITECTURE.md` | {{measured list}} |
+| `kia-context/specs/DESIGN.md` | {{measured list}} |
+| `kia-context/logs/PROGRESS.md` | {{measured list}} |
+| `kia-context/logs/BRAINSTORM.md` | {{measured list}} — and its **`D` numbers are cited from {{n}} files** |
 
 State the command you measured with, beside the number. A count nobody can reproduce goes stale silently.

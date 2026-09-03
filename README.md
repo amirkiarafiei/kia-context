@@ -33,7 +33,7 @@ The agent updates the necessary files the way it writes commit messages.
 
 ## Context System
 
-Eight files under `context/`. The agent reads and writes all of them.
+Eight files under `kia-context/`. The agent reads and writes all of them.
 
 
 | File                    | What it holds                                                                                                                                                       |
@@ -89,7 +89,7 @@ file you already have, and is safe to run again.
 ./install.sh --dry-run                          show what it would do
 ```
 
-It does three things: creates `context/` and `docs/`, adds the agent instructions to `AGENTS.md` (and
+It does three things: creates `kia-context/` and `docs/`, adds the agent instructions to `AGENTS.md` (and
 `CLAUDE.md` / `GEMINI.md`) inside markers so a re-run replaces them instead of adding a second copy, and
 installs three project-scoped skills for the agents you pick.
 
