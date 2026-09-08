@@ -23,23 +23,57 @@ END_MARK="<!-- kiacontext:end -->"
 # ------------------------------------------------------------------ data ---
 
 # Agents, their PROJECT-scoped skills directory, and the instruction file they read.
-# Only Claude Code's path is documented by its vendor; the rest follow the same
-# convention. Use "Other" (or --skills-dir) if yours differs.
+#
+# The four arrays are index-aligned and are checked for equal length below — a
+# silent misalignment would install one agent's skills into another's directory.
+# "Other" must stay last: menu_agents() treats the index past it as the button,
+# and an empty skills dir is the sentinel meaning "ask for the path".
+#
+# Paths marked (v) are stated in the vendor's own documentation:
+#   Claude Code   .claude/skills
+#   Hermes Agent  .hermes/skills   (v) also scans .agents/skills; needs `hermes skills trust`
+#   Antigravity   .agents/skills   (v) workspace default, back-compat .agent/skills
+#   Pi            .pi/skills       (v) also scans .agents/skills; project must be trusted
+#   Oh My Pi      .omp/skills      (v) also scans .agents/skills and .github/skills
+#   Grok          .grok/skills     (v) walked up to the repo root
+# Every agent listed reads AGENTS.md, which is always written, so none of them
+# needs an instruction file of its own. Use "Other" (or --skills-dir) if yours differs.
 AGENT_NAMES=(
   "Claude Code" "Cursor" "Gemini CLI" "Codex" "GitHub Copilot"
-  "OpenCode" "Qoder" "Kiro" "Other"
+  "OpenCode" "Qoder" "Kiro"
+  "Hermes Agent" "Antigravity" "Pi" "Oh My Pi" "Grok"
+  "Other"
 )
 AGENT_SLUGS=(
-  "claude" "cursor" "gemini" "codex" "copilot" "opencode" "qoder" "kiro" "other"
+  "claude" "cursor" "gemini" "codex" "copilot" "opencode" "qoder" "kiro"
+  "hermes" "antigravity" "pi" "omp" "grok"
+  "other"
 )
 AGENT_SKILL_DIRS=(
   ".claude/skills" ".cursor/skills" ".gemini/skills" ".agents/skills" ".copilot/skills"
-  ".opencode/skills" ".qoder/skills" ".kiro/skills" ""
+  ".opencode/skills" ".qoder/skills" ".kiro/skills"
+  ".hermes/skills" ".agents/skills" ".pi/skills" ".omp/skills" ".grok/skills"
+  ""
 )
 AGENT_DOCS=(
   "CLAUDE.md" "AGENTS.md" "GEMINI.md" "AGENTS.md" "AGENTS.md"
-  "AGENTS.md" "AGENTS.md" "AGENTS.md" "AGENTS.md"
+  "AGENTS.md" "AGENTS.md" "AGENTS.md"
+  "AGENTS.md" "AGENTS.md" "AGENTS.md" "AGENTS.md" "AGENTS.md"
+  "AGENTS.md"
 )
+
+# Agents whose project skills are inert until the project is trusted, by slug.
+# Verified per vendor: Hermes needs `hermes skills trust`; Pi gates all
+# project-local resources on the project being trusted. Oh My Pi does NOT — its
+# trust flag covers extensions only — so it is deliberately absent here.
+AGENT_TRUST="hermes pi"
+
+if [ ${#AGENT_NAMES[@]} -ne ${#AGENT_SLUGS[@]} ] \
+|| [ ${#AGENT_NAMES[@]} -ne ${#AGENT_SKILL_DIRS[@]} ] \
+|| [ ${#AGENT_NAMES[@]} -ne ${#AGENT_DOCS[@]} ]; then
+  printf 'install.sh: the AGENT_* arrays are not the same length — refusing to guess.\n' >&2
+  exit 1
+fi
 
 TEMPLATE_FILES=(
   "_template/kia-context/INDEX.md"
@@ -188,6 +222,18 @@ draw_button() {
   printf '     %s%s%s%s%s\n' "$color" "$BL" "$bar" "$BR" "$R"
 }
 
+# One-line button for a terminal too short to spare three rows on a box.
+draw_button_inline() {
+  local label=$1 focused=$2 enabled=$3 color
+  if [ "$focused" -eq 1 ]; then
+    if [ "$enabled" -eq 1 ]; then color="$GRN$B"; else color="$YEL$B"; fi
+    printf '   %s %s%s %s %s%s\n' "$ARROW" "$color$REV" "[" "$label" "]" "$R"
+  else
+    if [ "$enabled" -eq 1 ]; then color="$B"; else color="$GRY"; fi
+    printf '     %s[ %s ]%s\n' "$color" "$label" "$R"
+  fi
+}
+
 # The one question. Toggle agents, then press the button.
 # Sets PICKED to a space-separated list of indices; returns 1 if cancelled.
 PICKED=""
@@ -198,6 +244,23 @@ menu_agents() {
   i=0; while [ "$i" -lt "$n" ]; do marks="${marks}0"; i=$((i + 1)); done
   marks="1${marks:1}"          # Claude Code preselected — the common case
 
+  # The screen is redrawn by rewinding the cursor over exactly the lines we
+  # printed, so the whole menu has to fit on screen or the terminal scrolls and
+  # the rewind lands in the wrong place. Full chrome costs 11 lines on top of one
+  # row per agent; dropping the subtitle and folding the two hint lines into one
+  # saves 3, which is what keeps a list this long inside a 24-row terminal.
+  # 0 full, 1 compact, 2 tight. Full chrome costs 11 lines on top of one row per
+  # agent; compact drops the subtitle and folds the hints (8 + n); tight also drops
+  # the spacer blanks and draws the button as one line instead of a box (3 + n).
+  local layout=0 rows
+  rows=$(term_rows)
+  # -ge, not -gt: each line ends with a newline, so after the last one the cursor
+  # sits on the row below it. A block exactly as tall as the screen therefore
+  # scrolls one line, and rewinding `drawn` lines would clamp at the top instead
+  # of landing on the menu's first row. Leave a row in hand.
+  [ $(( 11 + n )) -ge "$rows" ] && layout=1
+  [ $((  8 + n )) -ge "$rows" ] && layout=2
+
   hide_cursor
   while :; do
     count=0; i=0
@@ -206,11 +269,13 @@ menu_agents() {
     done
 
     rewind "$drawn"; drawn=0
-    printf '\n'; drawn=$((drawn + 1))
+    if [ "$layout" -lt 2 ]; then printf '\n'; drawn=$((drawn + 1)); fi
     printf '  %sWhich agents work in this repository?%s   %s%d selected%s\n' \
       "$B" "$R" "$DIM" "$count" "$R"; drawn=$((drawn + 1))
-    printf '  %sEach one gets the three skills, project-scoped.%s\n' "$DIM" "$R"; drawn=$((drawn + 1))
-    printf '\n'; drawn=$((drawn + 1))
+    if [ "$layout" -eq 0 ]; then
+      printf '  %sEach one gets the three skills, project-scoped.%s\n' "$DIM" "$R"; drawn=$((drawn + 1))
+    fi
+    if [ "$layout" -lt 2 ]; then printf '\n'; drawn=$((drawn + 1)); fi
 
     i=0
     while [ "$i" -lt "$n" ]; do
@@ -226,19 +291,27 @@ menu_agents() {
       drawn=$((drawn + 1)); i=$((i + 1))
     done
 
-    printf '\n'; drawn=$((drawn + 1))
-    if [ "$count" -gt 0 ]; then
-      if [ "$cur" -eq "$n" ]; then draw_button "Install" 1 1; else draw_button "Install" 0 1; fi
+    if [ "$layout" -lt 2 ]; then printf '\n'; drawn=$((drawn + 1)); fi
+    local blabel=Install benabled=1 bfocus=0
+    [ "$count" -eq 0 ] && benabled=0
+    [ "$count" -eq 0 ] && [ "$cur" -eq "$n" ] && blabel="Pick at least one agent"
+    if [ "$cur" -eq "$n" ]; then bfocus=1; else bfocus=0; fi
+    if [ "$layout" -eq 2 ]; then
+      draw_button_inline "$blabel" "$bfocus" "$benabled"; drawn=$((drawn + 1))
     else
-      if [ "$cur" -eq "$n" ]; then draw_button "Pick at least one agent" 1 0; else draw_button "Install" 0 0; fi
+      draw_button "$blabel" "$bfocus" "$benabled"; drawn=$((drawn + 3))
     fi
-    drawn=$((drawn + 3))
 
-    printf '\n'; drawn=$((drawn + 1))
-    printf '     %s↑/↓ move %s space or enter toggle %s a all %s n none%s\n' \
-      "$DIM" "$DOT" "$DOT" "$DOT" "$R"; drawn=$((drawn + 1))
-    printf '     %spast the last agent is the Install button %s q cancel%s\n' \
-      "$DIM" "$DOT" "$R"; drawn=$((drawn + 1))
+    if [ "$layout" -eq 0 ]; then
+      printf '\n'; drawn=$((drawn + 1))
+      printf '     %s↑/↓ move %s space or enter toggle %s a all %s n none%s\n' \
+        "$DIM" "$DOT" "$DOT" "$DOT" "$R"; drawn=$((drawn + 1))
+      printf '     %spast the last agent is the Install button %s q cancel%s\n' \
+        "$DIM" "$DOT" "$R"; drawn=$((drawn + 1))
+    else
+      printf '     %s↑/↓ %s space toggle %s a all %s n none %s q cancel%s\n' \
+        "$DIM" "$DOT" "$DOT" "$DOT" "$DOT" "$R"; drawn=$((drawn + 1))
+    fi
 
     key=$(read_key)
     case "$key" in
@@ -317,7 +390,9 @@ Non-interactive:
   --yes                     accept defaults, no prompts
   --dir PATH                where to install (default: the git root, else \$PWD)
   --agents LIST             comma- or space-separated slugs:
-                            claude cursor gemini codex copilot opencode qoder kiro
+                            claude cursor gemini codex copilot opencode
+                            qoder kiro hermes antigravity pi omp grok
+                            (omp is Oh My Pi)
   --skills-dir PATH         project-scoped skills directory, for an agent not listed
 
   ./install.sh --yes --agents claude,cursor
@@ -372,7 +447,7 @@ else
   if ! menu_agents; then printf '\n'; bad "Cancelled."; exit 130; fi
 fi
 
-SEL_DIRS=""; SEL_DOCS="AGENTS.md"; SEL_LABEL=""
+SEL_DIRS=""; SEL_DOCS="AGENTS.md"; SEL_LABEL=""; SEL_TRUST=""
 for idx in $PICKED; do
   d="${AGENT_SKILL_DIRS[$idx]}"
   if [ -z "$d" ]; then
@@ -380,9 +455,15 @@ for idx in $PICKED; do
     elif [ "$HAVE_TTY" = "1" ]; then printf '\n'; ask_path "Skills directory for \"Other\"" ".claude/skills"; d="$ANSWER"
     else d=".claude/skills"; fi
   fi
-  SEL_DIRS="$SEL_DIRS $d"
+  # Several agents share .agents/skills, so the same directory can be picked twice.
+  # Writing it twice is harmless but reports every skill as installed more than
+  # once, which reads like a bug. Dedup, the way SEL_DOCS already does.
+  case " $SEL_DIRS " in *" $d "*) ;; *) SEL_DIRS="$SEL_DIRS $d" ;; esac
   SEL_LABEL="$SEL_LABEL${SEL_LABEL:+, }${AGENT_NAMES[$idx]}"
   case " $SEL_DOCS " in *" ${AGENT_DOCS[$idx]} "*) ;; *) SEL_DOCS="$SEL_DOCS ${AGENT_DOCS[$idx]}" ;; esac
+  case " $AGENT_TRUST " in
+    *" ${AGENT_SLUGS[$idx]} "*) SEL_TRUST="$SEL_TRUST${SEL_TRUST:+, }${AGENT_NAMES[$idx]}" ;;
+  esac
 done
 printf '  %sfor%s  %s\n' "$DIM" "$R" "$SEL_LABEL"
 printf '\n'; hr
@@ -462,4 +543,11 @@ printf '\n  %sNext, in your agent:%s\n\n' "$B" "$R"
 printf '     %s/kia-context-init%s   %sfill it in — new project or half-built, it handles both%s\n' "$CYN$B" "$R" "$DIM" "$R"
 printf '     %s/kia-context-help%s   %swhat each file is for%s\n' "$CYN$B" "$R" "$DIM" "$R"
 printf '     %s/kia-context-sync%s   %scatch the files up after work has happened%s\n' "$CYN$B" "$R" "$DIM" "$R"
+if [ -n "$SEL_TRUST" ]; then
+  printf '\n  %sOne more step for %s%s%s%s: project skills stay inert until the%s\n' \
+    "$DIM" "$R$B" "$SEL_TRUST" "$R" "$DIM" "$R"
+  printf '  %sproject is trusted, so the three above will not appear until you do it.%s\n' "$DIM" "$R"
+  printf '  %sHermes uses%s hermes skills trust%s; Pi prompts on first run.%s\n' \
+    "$DIM" "$B" "$R$DIM" "$R"
+fi
 printf '\n  %sNothing here is mandatory. Reshape any file; only the frontmatter is fixed.%s\n\n' "$GRY" "$R"

@@ -93,6 +93,38 @@ It does three things: creates `kia-context/` and `docs/`, adds the agent instruc
 `CLAUDE.md` / `GEMINI.md`) inside markers so a re-run replaces them instead of adding a second copy, and
 installs three project-scoped skills for the agents you pick.
 
+### Agents it knows
+
+Each one gets the three skills in the directory its own vendor documents. `AGENTS.md` is always written,
+and every agent added in v0.2 reads it, so none of them needs an instruction file of its own. Claude Code
+and Gemini CLI also get `CLAUDE.md` and `GEMINI.md`, since those are what they read first.
+
+| Agent | Slug | Skills go in |
+| ----- | ---- | ------------ |
+| Claude Code | `claude` | `.claude/skills/` |
+| Cursor | `cursor` | `.cursor/skills/` |
+| Gemini CLI | `gemini` | `.gemini/skills/` |
+| Codex | `codex` | `.agents/skills/` |
+| GitHub Copilot | `copilot` | `.copilot/skills/` |
+| OpenCode | `opencode` | `.opencode/skills/` |
+| Qoder | `qoder` | `.qoder/skills/` |
+| Kiro | `kiro` | `.kiro/skills/` |
+| Hermes Agent | `hermes` | `.hermes/skills/` |
+| Antigravity | `antigravity` | `.agents/skills/` |
+| Pi | `pi` | `.pi/skills/` |
+| Oh My Pi | `omp` | `.omp/skills/` |
+| Grok | `grok` | `.grok/skills/` |
+
+`.agents/skills/` is a shared convention rather than one vendor's. Codex and Antigravity use it as their
+primary directory, so picking both installs one copy instead of two. Hermes, Pi and Oh My Pi read it as
+well, but the installer writes each of them the directory its own vendor documents — so those get a copy
+each, and moving them to the shared one is your call, not the installer's.
+
+**Hermes and Pi ignore project skills until the project is trusted.** The installer says so when you
+pick either; Hermes uses `hermes skills trust`, Pi prompts on first run. Oh My Pi has no such gate.
+
+Anything else: pick **Other** and give it a path, or pass `--skills-dir`.
+
 ## Naming Philosophy
 
 **Kia** as in Amirkia. Also as in the car.
