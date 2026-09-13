@@ -3,7 +3,10 @@ description: >
   The execution log and the working memory of the project. Milestones, their deliverables, the acceptance
   criteria each one is judged against, and a short report written when each is done. This is the file an
   agent opens first every session to find out what to build next, and the file it writes to when the
-  build moves. Append-only and chronological.
+  build moves. Append-only and chronological. Deliverables and acceptance criteria are written as
+  `- [ ]` checkboxes and ticked `[x]` as they land — the loop below takes the first unticked one, so a
+  milestone without them stalls it. This file is always the ACTIVE part; closed history moves out to
+  PROGRESS_1.md, PROGRESS_2.md and so on.
   NOT here: why a choice was made (BRAINSTORM.md), or any rule that outlives the milestone
   (MANIFESTO.md / ARCHITECTURE.md).
 authority: state
@@ -20,8 +23,9 @@ last_updated: "{{YYYY-MM-DD}}"
 > section is worse than a missing one. The one thing that must **not** change is the frontmatter above:
 > those six fields are what make this file part of kiacontext.
 
-> **← Previous:** none. This is part one.
-> **Next →** none yet. When this file is split, the pointer goes here and in the new part.
+> **← Previous:** none yet. When this file is split, the closed history moves out to `PROGRESS_1.md`
+> and the pointer to it goes here and at the bottom.
+> **Next →** none. This file is the active part, and stays the active part.
 
 **Contents**
 
@@ -60,7 +64,8 @@ last_updated: "{{YYYY-MM-DD}}"
 | **M1** | {{name}} | {{the one sentence that decides it}} | — | ⬜ Not started |
 | **M2** | {{name}} | {{…}} | M1 | ⬜ Not started |
 
-> **Numbering never restarts.** When this file is split, part two continues at the next M.
+> **Numbering never restarts.** M17 follows M16 across a split — into this file, which stays active
+> while the earlier milestones move out to `PROGRESS_1.md`.
 
 ---
 
@@ -91,5 +96,5 @@ last_updated: "{{YYYY-MM-DD}}"
 
 ---
 
-> **← Previous:** none.
-> **Next →** none yet.
+> **← Previous:** none yet — no history has been split out of this file.
+> **Next →** none. This file is the active part, and stays the active part.

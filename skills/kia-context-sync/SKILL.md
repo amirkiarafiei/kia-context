@@ -25,6 +25,14 @@ Compare what the code did against what the files say happened. The gap is the wo
 milestone that closed. Verify against the acceptance criteria; do not tick on the strength of a commit
 message. If something is half-finished, say so rather than ticking it.
 
+**First, check there is anything to tick.** A milestone carries its deliverables as `- [ ]` checkboxes;
+if the active part has none, they were never written, and that is the finding — report it rather than
+ticking prose. It happens quietly, usually after a split, and nothing errors when it does.
+
+```bash
+grep -c '^- \[' kia-context/logs/PROGRESS.md
+```
+
 **`logs/BRAINSTORM.md`** — apply the entry test before writing anything:
 
 > **An entry earns its place when an alternative was rejected, or when a measurement changed our minds.**
@@ -58,8 +66,10 @@ Walk them. Each one fails silently, which is why they need a deliberate check.
 ## Step 5 — should anything be split?
 
 A log that has passed a phase boundary, or roughly 1,500 lines, or has simply stopped being readable.
-If so: open `NAME_2.md`, continue the numbering, set the old part to `closed`, and put the next/previous
-block at the top and bottom of both parts. Raise it with the human rather than splitting unasked.
+If so: move the closed history **out** to `NAME_1.md` (then `NAME_2.md`, and so on) and leave the active
+part in `NAME.md` — it is the opposite of what feels natural, and *Splitting a file* in `AGENTS.md` says
+why. Continue the numbering, set the moved-out part to `closed`, and put the next/previous block at the
+top and bottom of both parts. Raise it with the human rather than splitting unasked.
 
 ## Step 6 — report
 

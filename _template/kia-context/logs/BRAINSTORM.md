@@ -20,8 +20,9 @@ last_updated: "{{YYYY-MM-DD}}"
 > section is worse than a missing one. The one thing that must **not** change is the frontmatter above:
 > those six fields are what make this file part of kiacontext.
 
-> **← Previous:** none. This is part one.
-> **Next →** none yet. When this file is split, the pointer goes here and in the new part.
+> **← Previous:** none yet. When this file is split, the closed history moves out to `BRAINSTORM_1.md`
+> and the pointer to it goes here and at the bottom.
+> **Next →** none. This file is the active part, and stays the active part.
 
 **Contents**
 
@@ -99,5 +100,5 @@ with six empty ones.}}
 
 ---
 
-> **← Previous:** none.
-> **Next →** none yet.
+> **← Previous:** none yet — no history has been split out of this file.
+> **Next →** none. This file is the active part, and stays the active part.

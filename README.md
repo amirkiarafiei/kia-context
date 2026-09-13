@@ -65,6 +65,7 @@ You can run them, and so can the agent.
 | `/kia-context-init` | Once per repo, straight after installing. Works on a half-built project too: it reads your code for `ARCHITECTURE.md` and `DESIGN.md`, drafts `PROGRESS.md` and `BRAINSTORM.md` from git history and flags them as inferred, and asks you a few short questions for `GENESIS.md` and `MANIFESTO.md`. |
 | `/kia-context-help` | Any time you or the agent are unsure what a file is for, or where something should be written down.                                                                                                                                                                                                  |
 | `/kia-context-sync` | After a stretch of work, before a handover, or whenever the files have fallen behind what the code actually does.                                                                                                                                                                                    |
+| `/kia-context-migrate` | After re-running the installer on a project that already had kiacontext, when it says this project is behind. Applies only what changed since your version. |
 
 
 
@@ -80,8 +81,9 @@ That comes from the format. Nothing here needs a loop.
 ## Installation
 
 The one-liner at the top is the fast path. To read the script before running it, clone the repo and run
-`./install.sh`. Either way it asks one question — which agents work in this repo — never overwrites a
-file you already have, and is safe to run again.
+`./install.sh`. Either way it asks one question — which agents work in this repo — and is safe to run
+again. It never touches a context file you already have, and anything of ours that it does replace is
+copied to `*.kiacontext-bak` first.
 
 ```
 ./install.sh                                    interactive
@@ -91,11 +93,39 @@ file you already have, and is safe to run again.
 
 It does three things: creates `kia-context/` and `docs/`, adds the agent instructions to `AGENTS.md` (and
 `CLAUDE.md` / `GEMINI.md`) inside markers so a re-run replaces them instead of adding a second copy, and
-installs three project-scoped skills for the agents you pick.
+installs four project-scoped skills for the agents you pick.
+
+## Updating
+
+Run the installer again. That is the whole update path, and it is safe by design:
+
+| What | Happens on a re-run |
+| ---- | ------------------- |
+| `kia-context/`, `docs/` | left alone — they hold your project, not ours |
+| the `AGENTS.md` block | replaced **in place**, previous copy kept at `AGENTS.md.kiacontext-bak` |
+| the skills | replaced, previous copy kept at `SKILL.md.kiacontext-bak` |
+
+A backup is written only when the content is actually about to change, so an
+unchanged re-run leaves nothing behind. **An existing backup is never overwritten** —
+later ones become `.kiacontext-bak.1`, `.kiacontext-bak.2`. That matters more than it
+sounds: the first backup is the one holding whatever you changed, and a single slot
+would let the next routine update replace your edit with a copy of our own previous
+version. Delete them whenever you have looked.
+
+If the markers around the block have been damaged — one of the pair deleted, or the block pasted twice —
+the installer **refuses to touch that file** and tells you what to repair. Rewriting it from a half-open
+marker would take your surrounding text with it. Nothing is reported as installed unless it was actually
+written: if any part fails, the run says so and exits non-zero rather than printing a green tick.
+
+When the harness itself changes shape, your context files need moving, and only an agent can do that
+sensibly — these are prose documents, not a schema. So the installer reads the version this project is
+stamped with (`harness:` in `kia-context/INDEX.md`) and, if it is behind, points you at
+`/kia-context-migrate`. That skill applies only the changes since your version, moves content rather than
+recreating it, and updates the stamp **last** — so a half-applied migration never looks finished.
 
 ### Agents it knows
 
-Each one gets the three skills in the directory its own vendor documents. `AGENTS.md` is always written,
+Each one gets the four skills in the directory its own vendor documents. `AGENTS.md` is always written,
 and every agent added in v0.2 reads it, so none of them needs an instruction file of its own. Claude Code
 and Gemini CLI also get `CLAUDE.md` and `GEMINI.md`, since those are what they read first.
 
@@ -143,7 +173,8 @@ Nothing more.
 ```
 install.sh          the installer
 _template/          the markdown files it copies, plus AGENTS.harness.md
-skills/             the three skills
+skills/             the four skills
+tests/              update and migration scenarios — ./tests/update-scenarios.sh
 ```
 
 MIT.

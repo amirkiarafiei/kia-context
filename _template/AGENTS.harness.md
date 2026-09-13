@@ -1,5 +1,5 @@
 <!-- ─────────────────────────────────────────────────────────────────────────
-     kiacontext v0.2 — append this block to the end of AGENTS.md and CLAUDE.md.
+     kiacontext v0.3 — append this block to the end of AGENTS.md and CLAUDE.md.
      Keep the two files byte-for-byte identical, or half the tools read the stale one.
      ───────────────────────────────────────────────────────────────────────── -->
 
@@ -34,7 +34,10 @@ by an agent, out of a conversation — nobody maintains them by hand. Your job i
 - **Before touching anything structural:** `specs/ARCHITECTURE.md`.
 - **Every session:** `logs/PROGRESS.md` holds the current milestone, its deliverables and their
   acceptance criteria — what is being built, and how far it got. How to work through it is written in
-  that file, not here.
+  that file, not here — with one exception, because the procedure there depends on it mechanically:
+  **a milestone carries its deliverables as `- [ ]` checkboxes, ticked `[x]` as each lands.** The
+  procedure's first step takes the first unchecked one, so a milestone written without them stalls it.
+  Everything else about how a milestone looks is yours to choose.
 - **Every file states its own terms.** Its frontmatter says how binding it is, who may write to it,
   whether it is still active, and — in the description — what does *not* belong in it. Read that before
   editing; it beats guessing from the filename.
@@ -105,7 +108,15 @@ commit message covers the rest.
 
 Split on a **phase boundary** first, and on **length** second — roughly 1,500 lines, or whenever the file
 has stopped being readable. Continue the numbering, never restart it, and put the next/previous
-navigation block at the top and bottom of both parts. Name the parts `NAME.md`, `NAME_2.md`, `NAME_3.md`.
+navigation block at the top and bottom of both parts.
+
+**The active part always keeps the bare name.** Splitting moves the closed history *out* to `NAME_1.md`,
+`NAME_2.md`, … and leaves the live part in `NAME.md`. It is the opposite of what feels natural, and it is
+the whole point: the file every session opens keeps the name every document points at, and the sections
+that say *how to work* — the loop, the circuit breakers — stay in a file that is never closed. Split the
+other way and the procedure ends up in an archive nobody opens, which fails silently and can go unnoticed
+for months.
 
 Files that describe **one current state** — `ARCHITECTURE.md`, `DESIGN.md`, `MANIFESTO.md` — are never
 split. They change in place.
+<!-- kiacontext:block-end — the installer checks for this line; a copy without it was truncated in transit. -->

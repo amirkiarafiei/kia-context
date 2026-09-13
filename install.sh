@@ -6,9 +6,9 @@
 #   Remote: curl -sSL https://raw.githubusercontent.com/amirkiarafiei/kia-context/main/install.sh | bash
 #
 # What it does, and nothing else:
-#   1. scaffolds kia-context/ and docs/ into this repository, never overwriting a file
+#   1. scaffolds kia-context/ and docs/ into this repository, never overwriting one
 #   2. writes the agent instructions into AGENTS.md (and CLAUDE.md / GEMINI.md), between markers
-#   3. installs three project-scoped skills for the agents you pick
+#   3. installs four project-scoped skills for the agents you pick
 #
 # Portability: targets bash 3.2 (macOS default) — no associative arrays, no mapfile, no ${x,,}.
 # All keyboard input is read from /dev/tty so it still works when piped from curl.
@@ -16,7 +16,9 @@
 set -o pipefail
 
 REPO_RAW_URL="https://raw.githubusercontent.com/amirkiarafiei/kia-context/main"
-VERSION="v0.2"
+VERSION="v0.3"
+BAK_SUFFIX=".kiacontext-bak"
+BLOCK_END="kiacontext:block-end"
 BEGIN_MARK="<!-- kiacontext:begin -->"
 END_MARK="<!-- kiacontext:end -->"
 
@@ -90,7 +92,7 @@ TEMPLATE_FILES=(
   "_template/docs/AUTHENTICATION.md"
   "_template/docs/SECURITY.md"
 )
-SKILLS=( "kia-context-help" "kia-context-init" "kia-context-sync" )
+SKILLS=( "kia-context-help" "kia-context-init" "kia-context-sync" "kia-context-migrate" )
 
 # ---------------------------------------------------------- capabilities ---
 
@@ -273,7 +275,7 @@ menu_agents() {
     printf '  %sWhich agents work in this repository?%s   %s%d selected%s\n' \
       "$B" "$R" "$DIM" "$count" "$R"; drawn=$((drawn + 1))
     if [ "$layout" -eq 0 ]; then
-      printf '  %sEach one gets the three skills, project-scoped.%s\n' "$DIM" "$R"; drawn=$((drawn + 1))
+      printf '  %sEach one gets the four skills, project-scoped.%s\n' "$DIM" "$R"; drawn=$((drawn + 1))
     fi
     if [ "$layout" -lt 2 ]; then printf '\n'; drawn=$((drawn + 1)); fi
 
@@ -376,6 +378,69 @@ read_file() {
   else local tmp; tmp=$(mktemp) || return 1; fetch "$REPO_RAW_URL/$1" "$tmp" && cat "$tmp"; rm -f "$tmp"; fi
 }
 
+# ------------------------------------------------------- update semantics ---
+
+# The only version marker in an installed project is INDEX.md's `harness:` field.
+# The scaffold step never overwrites an existing file, so that field keeps recording
+# the version the project was installed with — exactly what a migration needs to
+# know. This script only ever READS it. kia-context-migrate writes it, as its last
+# step, so the stamp means "migrated to" and not "the installer ran": a half-applied
+# migration must never look finished.
+detect_installed_version() {
+  local idx="$ROOT/kia-context/INDEX.md" v=""
+  if [ -f "$idx" ]; then
+    v=$(sed -n 's/^harness:[[:space:]]*kiacontext[[:space:]]*\(v[0-9][0-9.]*\).*/\1/p' "$idx" 2>/dev/null | head -1)
+    if [ -n "$v" ]; then printf '%s' "$v"; else printf 'unstamped'; fi
+    return 0
+  fi
+  [ -f "$ROOT/context/INDEX.md" ] && { printf 'v0.1'; return 0; }
+  printf 'none'
+}
+
+# Exactly one BEGIN and one END, in that order, or the file is not ours to edit.
+# A missing END makes the strip swallow every line after BEGIN — the user's own
+# sections included — and a missing BEGIN leaves a second copy of the block behind.
+# Both are silent, so they are checked before anything is written.
+marker_state() {
+  local f=$1 b e bl el
+  [ -f "$f" ] || { printf 'none'; return 0; }
+  # -a so a stray NUL byte cannot turn grep's answer into a binary-file notice, and
+  # anything unparseable is reported as damaged rather than none — `none` appends,
+  # and appending to a file we failed to read is how a second block gets added.
+  b=$(grep -acF "$BEGIN_MARK" "$f" 2>/dev/null)
+  e=$(grep -acF "$END_MARK"   "$f" 2>/dev/null)
+  case "$b:$e" in *[!0-9:]*|:*|*:) printf 'damaged'; return 0 ;; esac
+  if [ "$b" -eq 0 ] && [ "$e" -eq 0 ]; then printf 'none'; return 0; fi
+  if [ "$b" -eq 1 ] && [ "$e" -eq 1 ]; then
+    bl=$(grep -anF "$BEGIN_MARK" "$f" 2>/dev/null | head -1 | cut -d: -f1)
+    el=$(grep -anF "$END_MARK"   "$f" 2>/dev/null | head -1 | cut -d: -f1)
+    case "$bl:$el" in *[!0-9:]*|:*|*:) printf 'damaged'; return 0 ;; esac
+    if [ "$bl" -lt "$el" ]; then printf 'ok'; return 0; fi
+  fi
+  printf 'damaged'
+}
+
+# One backup slot per file, overwritten each run. Only ever called when the content
+# is about to change, so an idempotent re-run leaves no clutter behind. Returns
+# non-zero when the copy could not be made: no backup, no overwrite.
+# Never clobber an earlier backup. The first one holds whatever diverged first —
+# usually the user's own edit — and a later routine update must not overwrite it
+# with a copy of our own previous version. Prints the path it used.
+backup_file() {
+  local src=$1 dest="$1$BAK_SUFFIX" n=1
+  while [ -e "$dest" ]; do
+    cmp -s "$src" "$dest" && { printf '%s' "$dest"; return 0; }   # already have it
+    dest="$1$BAK_SUFFIX.$n"; n=$((n + 1))
+    [ "$n" -gt 99 ] && return 1
+  done
+  cp "$src" "$dest" 2>/dev/null || return 1
+  printf '%s' "$dest"
+}
+
+# Bare `mktemp` is not portable — BSD wants a template — and a failure here is what
+# makes a truncating write destructive, so it is checked at every call site.
+mk_tmp() { mktemp "${TMPDIR:-/tmp}/kiactx.XXXXXX" 2>/dev/null; }
+
 # ----------------------------------------------------------------- flags ---
 
 usage() {
@@ -397,7 +462,9 @@ Non-interactive:
 
   ./install.sh --yes --agents claude,cursor
 
-Existing files are never overwritten. Re-running is safe.
+Your context files are never overwritten. Re-running is safe: the instructions block
+and the skills are ours and do get replaced, but the previous copy is kept beside
+them as <file>.kiacontext-bak.
 USAGE
 }
 
@@ -407,9 +474,9 @@ while [ $# -gt 0 ]; do
     -h|--help) usage; exit 0 ;;
     -y|--yes)  ASSUME_YES=1 ;;
     -n|--dry-run) DRY=1 ;;
-    --dir) shift; OPT_DIR="$1" ;;
-    --agents) shift; OPT_AGENTS="$1" ;;
-    --skills-dir) shift; OPT_SKILLS_DIR="$1" ;;
+    --dir)         [ $# -ge 2 ] || { bad "--dir needs a path"; exit 1; }; shift; OPT_DIR="$1" ;;
+    --agents)      [ $# -ge 2 ] || { bad "--agents needs a list"; exit 1; }; shift; OPT_AGENTS="$1" ;;
+    --skills-dir)  [ $# -ge 2 ] || { bad "--skills-dir needs a path"; exit 1; }; shift; OPT_SKILLS_DIR="$1" ;;
     *) bad "Unknown option: $1"; usage; exit 1 ;;
   esac
   shift
@@ -425,6 +492,11 @@ ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
 case "$ROOT" in "~") ROOT="$HOME" ;; "~/"*) ROOT="$HOME/${ROOT#\~/}" ;; esac
 if [ ! -d "$ROOT" ]; then bad "Not a directory: $ROOT"; exit 1; fi
 printf '  %sinto%s %s\n' "$DIM" "$R" "$ROOT"
+
+# Read the stamp before the scaffold runs — once INDEX.md exists it reports the
+# version we are installing, not the one already here.
+PRIOR_VERSION="$(detect_installed_version)"
+FAILED=0
 
 # --- the one question ---
 if [ -n "$OPT_AGENTS" ]; then
@@ -458,7 +530,11 @@ for idx in $PICKED; do
   # Several agents share .agents/skills, so the same directory can be picked twice.
   # Writing it twice is harmless but reports every skill as installed more than
   # once, which reads like a bug. Dedup, the way SEL_DOCS already does.
-  case " $SEL_DIRS " in *" $d "*) ;; *) SEL_DIRS="$SEL_DIRS $d" ;; esac
+  case "
+$SEL_DIRS" in *"
+$d
+"*) ;; *) SEL_DIRS="$SEL_DIRS$d
+" ;; esac
   SEL_LABEL="$SEL_LABEL${SEL_LABEL:+, }${AGENT_NAMES[$idx]}"
   case " $SEL_DOCS " in *" ${AGENT_DOCS[$idx]} "*) ;; *) SEL_DOCS="$SEL_DOCS ${AGENT_DOCS[$idx]}" ;; esac
   case " $AGENT_TRUST " in
@@ -472,8 +548,7 @@ printf '\n'; hr
 # v0.1 scaffolded into context/. v0.2 renamed it kia-context/, so an older install
 # has real, filled-in content sitting in a folder nothing points at any more. This
 # script only ever adds files, so it will not move it for them — but it says so.
-LEGACY="$ROOT/context"
-if [ -d "$LEGACY" ] && [ -f "$LEGACY/INDEX.md" ]; then
+if [ "$PRIOR_VERSION" = "v0.1" ]; then
   step "A v0.1 layout is already here"
   warn "context/ holds a filled-in harness from kiacontext v0.1."
   printf '\n     %sv0.2 renamed that folder to kia-context/ — no leading dot, so ripgrep,%s\n' "$DIM" "$R"
@@ -484,7 +559,14 @@ if [ -d "$LEGACY" ] && [ -f "$LEGACY/INDEX.md" ]; then
   printf '\n       %sgit mv context kia-context%s\n' "$B" "$R"
   printf '       %sgrep -rn "context/" . --exclude-dir=.git --exclude-dir=node_modules%s\n\n' "$B" "$R"
   printf '     %sThe grep is rule 2 of the harness: prose links and run-time paths break%s\n' "$DIM" "$R"
-  printf '     %ssilently, and no test suite will find them for you.%s\n' "$DIM" "$R"
+  printf '     %ssilently, and no test suite will find them for you.%s\n\n' "$DIM" "$R"
+  printf '     %sOr let an agent do it — %s/kia-context-migrate%s%s walks every change%s\n' \
+    "$DIM" "$CYN$B" "$R" "$DIM" "$R"
+  printf '     %ssince the version this project is on, and moves the content for you.%s\n\n' "$DIM" "$R"
+  printf '     %sThis run will NOT scaffold a new kia-context/ — an empty one%s\n' "$DIM" "$R"
+  printf '     %sstamped with the current version would tell the migrator there is nothing%s\n' "$DIM" "$R"
+  printf '     %sto do, and strand everything in context/. You still get the instructions%s\n' "$DIM" "$R"
+  printf '     %sblock and the skills, which is all the migration needs.%s\n' "$DIM" "$R"
 fi
 
 # --- 1. scaffold ---
@@ -492,55 +574,176 @@ step "Context files"
 created=0; existed=0
 for src in "${TEMPLATE_FILES[@]}"; do
   rel="${src#_template/}"; dest="$ROOT/$rel"
+  # On a v0.1 project, do not scaffold kia-context/ — a fresh INDEX.md carries the
+  # current stamp, and writing one beside an unmigrated context/ tells the migrator
+  # the project is already up to date. docs/ carries no stamp, so it still goes in.
+  case "$PRIOR_VERSION:$rel" in
+    v0.1:kia-context/*) kept "$rel  ${GRY}skipped until context/ is migrated${R}"; continue ;;
+  esac
   if [ -f "$dest" ]; then kept "$rel"; existed=$((existed + 1)); continue; fi
   if [ "$DRY" = "1" ]; then ok "$rel"; created=$((created + 1)); continue; fi
-  if get_file "$src" "$dest"; then ok "$rel"; created=$((created + 1)); else bad "$rel — could not fetch"; fi
+  if get_file "$src" "$dest"; then ok "$rel"; created=$((created + 1))
+  else bad "$rel — could not fetch"; FAILED=$((FAILED + 1)); fi
 done
 [ "$existed" -gt 0 ] && printf '\n   %s%d file(s) already existed and were left alone.%s\n' "$GRY" "$existed" "$R"
 
 # --- 2. instructions ---
 step "Agent instructions"
-BLOCK="$(read_file _template/AGENTS.harness.md | sed '1,/-->/d' | sed '/./,$!d')"
-if [ -z "$BLOCK" ]; then bad "Could not read the harness block."; exit 1; fi
+RAW_BLOCK="$(read_file _template/AGENTS.harness.md)"
+if [ -z "$RAW_BLOCK" ]; then bad "Could not read the harness block."; exit 1; fi
+# A fetch can return 200 and still be cut short. The block ends with a known line;
+# without it we are holding a partial copy, and installing half the instructions
+# into every agent's context is worse than installing none.
+case "$RAW_BLOCK" in
+  *"$BLOCK_END"*) ;;
+  *) bad "The harness block is incomplete — the copy is truncated."
+     printf '     %sNothing was written. Run this again; if it keeps happening, the%s\n' "$DIM" "$R"
+     printf '     %sdownload is being cut short somewhere between here and GitHub.%s\n' "$DIM" "$R"
+     exit 1 ;;
+esac
+BLOCK="$(printf '%s\n' "$RAW_BLOCK" | sed '1,/-->/d' | sed "/$BLOCK_END/d" | sed '/./,$!d')"
 for doc in $SEL_DOCS; do
-  target="$ROOT/$doc"
-  had=0; [ -f "$target" ] && grep -qF "$BEGIN_MARK" "$target" 2>/dev/null && had=1
-  if [ "$DRY" = "1" ]; then
-    if [ "$had" = "1" ]; then ok "$doc  ${GRY}refresh${R}"; else ok "$doc  ${GRY}append${R}"; fi
+  target="$ROOT/$doc"; bak=""
+  state="$(marker_state "$target")"
+
+  if [ "$state" = "damaged" ]; then
+    bad "$doc — the kiacontext markers are damaged. Left untouched."
+    printf '     %sExpected one %s and one %s, in that order.%s\n' \
+      "$DIM" "$BEGIN_MARK" "$END_MARK" "$R"
+    printf '     %sRepair the pair (or delete the block entirely) and run this again.%s\n' "$DIM" "$R"
+    printf '     %sRewriting it from here would take the surrounding text with it.%s\n' "$DIM" "$R"
+    FAILED=$((FAILED + 1))
     continue
   fi
-  if [ "$had" = "1" ]; then
-    tmp="$(mktemp)"
-    awk -v b="$BEGIN_MARK" -v e="$END_MARK" '
-      index($0,b){skipping=1} !skipping{print} index($0,e){skipping=0}' "$target" > "$tmp"
-    { cat "$tmp"; printf '%s\n\n%s\n\n%s\n' "$BEGIN_MARK" "$BLOCK" "$END_MARK"; } > "$target"
-    rm -f "$tmp"; ok "$doc  ${GRY}block refreshed${R}"
+
+  if [ "$DRY" = "1" ]; then
+    if [ "$state" = "ok" ]; then ok "$doc  ${GRY}refresh${R}"; else ok "$doc  ${GRY}append${R}"; fi
+    continue
+  fi
+
+  if [ "$state" = "ok" ]; then
+    # Replace the block where it stands. Stripping it and appending a fresh copy
+    # would shuffle anything the user wrote after it to the top of the file.
+    tmp="$(mk_tmp)" && blk="$(mk_tmp)" || {
+      bad "$doc — no usable temp directory. Left untouched."
+      FAILED=$((FAILED + 1)); rm -f "$tmp" "$blk"; continue
+    }
+    printf '%s\n\n%s\n\n%s\n' "$BEGIN_MARK" "$BLOCK" "$END_MARK" > "$blk"
+    awk -v b="$BEGIN_MARK" -v e="$END_MARK" -v blk="$blk" '
+      index($0,b) && !seen { seen=1; skipping=1
+                             while ((getline line < blk) > 0) print line
+                             next }
+      skipping             { if (index($0,e)) skipping=0; next }
+                           { print }' "$target" > "$tmp"
+    awk_rc=$?
+    cmp -s "$tmp" "$target"; cmp_rc=$?
+
+    # The write below truncates before it can fail, so everything that could make it
+    # produce a bad result is checked first. cmp exit 2 means "could not compare" —
+    # treating that as "differs" is how an empty staged copy got written over a doc.
+    if [ "$cmp_rc" -eq 0 ]; then
+      kept "$doc  already current"; rm -f "$tmp" "$blk"
+    elif [ "$awk_rc" -ne 0 ] || [ "$cmp_rc" -ne 1 ] || [ ! -s "$tmp" ] || [ ! -s "$blk" ]; then
+      bad "$doc — the staged copy is unusable. Left untouched."
+      FAILED=$((FAILED + 1)); rm -f "$tmp" "$blk"
+    elif ! bak="$(backup_file "$target")"; then
+      bad "$doc — could not write a backup beside it. Left untouched."
+      FAILED=$((FAILED + 1)); rm -f "$tmp" "$blk"
+    elif cat "$tmp" > "$target" 2>/dev/null && grep -qF "$END_MARK" "$target" 2>/dev/null; then
+      # cat through the existing file rather than mv onto it: a mktemp file is 0600,
+      # and moving it into place would quietly restrict a doc the whole team reads.
+      rm -f "$tmp" "$blk"
+      ok "$doc  ${GRY}block refreshed · previous kept at ${bak##*/}${R}"
+    else
+      # The redirection already truncated it. Put the backup back.
+      cp "$bak" "$target" 2>/dev/null \
+        && bad "$doc — could not write it. Restored from ${bak##*/}." \
+        || bad "$doc — could not write it, and could not restore. Your copy is at $bak"
+      FAILED=$((FAILED + 1)); rm -f "$tmp" "$blk"
+    fi
   else
-    [ -f "$target" ] && printf '\n' >> "$target"
-    printf '%s\n\n%s\n\n%s\n' "$BEGIN_MARK" "$BLOCK" "$END_MARK" >> "$target"
-    ok "$doc"
+    { [ -f "$target" ] && printf '\n' >> "$target"
+      printf '%s\n\n%s\n\n%s\n' "$BEGIN_MARK" "$BLOCK" "$END_MARK" >> "$target"
+    } 2>/dev/null
+    if grep -qF "$END_MARK" "$target" 2>/dev/null; then ok "$doc"
+    else bad "$doc — could not write it."; FAILED=$((FAILED + 1)); fi
   fi
 done
 
 # --- 3. skills ---
 step "Skills"
+# Newline-separated, and globbing off while we split it: a path like "my skills" or
+# one containing * would otherwise become several paths, or every name in the CWD.
+OLD_IFS=$IFS; IFS='
+'; set -f
 for d in $SEL_DIRS; do
   for s in "${SKILLS[@]}"; do
-    dest="$ROOT/$d/$s/SKILL.md"
+    dest="$ROOT/$d/$s/SKILL.md"; bak=""
     if [ "$DRY" = "1" ]; then ok "$d/$s"; continue; fi
-    if get_file "skills/$s/SKILL.md" "$dest"; then ok "$d/$s"; else bad "$d/$s — could not fetch"; fi
+    # Fetch to one side first: these are ours to replace, but somebody may have
+    # tuned one for their project, and an overwrite with no copy left behind is
+    # the one thing this script must never do.
+    stage="$(mk_tmp)" || { bad "$d/$s — no usable temp directory."; FAILED=$((FAILED + 1)); continue; }
+    if ! get_file "skills/$s/SKILL.md" "$stage" || [ ! -s "$stage" ]; then
+      bad "$d/$s — could not fetch"; FAILED=$((FAILED + 1)); rm -f "$stage"; continue
+    fi
+    # Same reasoning as the block: a truncated skill still exits 0. Frontmatter that
+    # opens, names this skill and closes again is cheap proof the file arrived whole.
+    if [ "$(grep -c '^---$' "$stage")" -lt 2 ] || ! grep -q "^name: $s\$" "$stage"; then
+      bad "$d/$s — the copy is truncated or malformed. Left untouched."
+      FAILED=$((FAILED + 1)); rm -f "$stage"; continue
+    fi
+    if [ -f "$dest" ] && cmp -s "$stage" "$dest"; then
+      kept "$d/$s  already current"; rm -f "$stage"
+    elif [ -f "$dest" ] && ! bak="$(backup_file "$dest")"; then
+      bad "$d/$s — could not write a backup beside it. Left untouched."
+      FAILED=$((FAILED + 1)); rm -f "$stage"
+    elif mkdir -p "$(dirname "$dest")" 2>/dev/null && cat "$stage" > "$dest" 2>/dev/null; then
+      # Same reason as above: a new skill should land at the umask default, and an
+      # existing one should keep whatever mode it already had.
+      rm -f "$stage"
+      if [ -n "$bak" ]; then ok "$d/$s  ${GRY}updated · previous kept at ${bak##*/}${R}"; bak=""
+      else ok "$d/$s"; fi
+    else
+      bad "$d/$s — could not write it. Left untouched."
+      FAILED=$((FAILED + 1)); rm -f "$stage"
+    fi
   done
 done
+set +f; IFS=$OLD_IFS
 
 # --- done ---
 printf '\n'; hr; printf '\n'
 if [ "$DRY" = "1" ]; then
   printf '  %s%s Dry run — nothing was written.%s\n' "$YEL$B" "$ARROW" "$R"
+  # A dry run exists to predict the real one, so it fails where the real one would.
+  if [ "$FAILED" -gt 0 ]; then
+    printf '\n  %s%d problem(s) above would stop a real run.%s\n\n' "$RED$B" "$FAILED" "$R"
+    exit 1
+  fi
+elif [ "$FAILED" -gt 0 ]; then
+  # Never report success over a partial write. A half-installed harness that looks
+  # finished is worse than one that visibly failed.
+  printf '  %s%s Finished with %d problem(s).%s %s%d created, %d left alone%s\n' \
+    "$RED$B" "$CROSS" "$FAILED" "$R" "$DIM" "$created" "$existed" "$R"
+  printf '\n  %sNothing above was reported as installed unless it was written. Fix the%s\n' "$DIM" "$R"
+  printf '  %scause and run this again — re-running is safe.%s\n\n' "$DIM" "$R"
+  exit 1
 else
   printf '  %s%s Installed.%s %s%d created, %d left alone%s\n' "$GRN$B" "$TICK" "$R" "$DIM" "$created" "$existed" "$R"
 fi
+
 printf '\n  %sNext, in your agent:%s\n\n' "$B" "$R"
-printf '     %s/kia-context-init%s   %sfill it in — new project or half-built, it handles both%s\n' "$CYN$B" "$R" "$DIM" "$R"
+# A project that already has the harness does not need init, and one that is
+# behind needs the migration before anything else.
+if [ "$PRIOR_VERSION" != "none" ] && [ "$PRIOR_VERSION" != "$VERSION" ]; then
+  printf '     %s/kia-context-migrate%s  %sbring the docs up to %s — it reads the version%s\n' \
+    "$CYN$B" "$R" "$DIM" "$VERSION" "$R"
+  printf '     %s%s  %sthis project is on and applies only what changed%s\n' \
+    "$CYN$B" "                    " "$DIM" "$R"
+elif [ "$PRIOR_VERSION" = "none" ]; then
+  printf '     %s/kia-context-init%s   %sfill it in — new project or half-built, it handles both%s\n' "$CYN$B" "$R" "$DIM" "$R"
+fi
 printf '     %s/kia-context-help%s   %swhat each file is for%s\n' "$CYN$B" "$R" "$DIM" "$R"
 printf '     %s/kia-context-sync%s   %scatch the files up after work has happened%s\n' "$CYN$B" "$R" "$DIM" "$R"
 if [ -n "$SEL_TRUST" ]; then

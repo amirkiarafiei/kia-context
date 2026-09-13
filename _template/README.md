@@ -18,8 +18,8 @@ _template/
 
 ## Installing
 
-Run `./install.sh` from the repository root above this one — it does all of the below, never overwrites
-an existing file, and is safe to re-run.
+Run `./install.sh` from the repository root above this one — it does all of the below, never touches a
+context file you already have, and is safe to re-run.
 
 ## Or by hand
 
@@ -60,11 +60,14 @@ description does — most confusion in a harness is a file quietly doing another
 `PROGRESS.md` and `BRAINSTORM.md` grow. Split them on a **phase boundary** first, and on **length**
 second — around 1,500 lines, or whenever the file has stopped being readable.
 
-- Name the parts `PROGRESS.md`, `PROGRESS_2.md`, `PROGRESS_3.md`.
+- **The active part keeps the bare name.** The closed history moves out to `PROGRESS_1.md`,
+  `PROGRESS_2.md`, … and the live part stays `PROGRESS.md`. See *Splitting a file* in
+  `AGENTS.harness.md` for why it is that way round — it is the rule that stops the operating procedure
+  being archived along with the history.
 - **Continue the numbering.** M17 follows M16 into a new file. D262 follows D261. These get cited from
   code, and a renumber breaks every citation silently.
-- Set the old part's `status:` to `closed`, and put the next/previous block at the top **and** the bottom
-  of both parts. The logs are a linked list; the blocks are how a reader walks it.
+- Set the moved-out part's `status:` to `closed`, and put the next/previous block at the top **and** the
+  bottom of both parts. The logs are a linked list; the blocks are how a reader walks it.
 - **Never split** `ARCHITECTURE.md`, `DESIGN.md` or `MANIFESTO.md`. They describe one current state, so
   they change in place.
 
@@ -76,4 +79,4 @@ the rules are the part that was paid for.
 
 ---
 
-`kiacontext v0.2`
+`kiacontext v0.3`

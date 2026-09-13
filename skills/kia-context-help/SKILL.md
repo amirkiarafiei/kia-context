@@ -80,7 +80,8 @@ frontmatter is a suggestion that any project may reshape.
 documents — never renumber, grep after a rename, never copy a rule into two files, and so on. None of
 them tell anyone how to write code.
 
-## The other two skills
+## The other three skills
 
 - `kia-context-init` — set it up in a repository for the first time.
 - `kia-context-sync` — bring the files back in line after work has happened.
+- `kia-context-migrate` — bring an older install up to the current harness version.

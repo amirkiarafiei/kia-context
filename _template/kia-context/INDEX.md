@@ -10,7 +10,7 @@ writes: agent, when files move
 status: active
 covers: the whole harness
 last_updated: "{{YYYY-MM-DD}}"
-harness: kiacontext v0.2
+harness: kiacontext v0.3
 ---
 
 # 🗺️ INDEX — What each file is, and when to open it
@@ -55,8 +55,10 @@ A project has one phase until it has two. Add a row when a phase opens, and set 
 >
 > | Phase | Span | State | Log |
 > |---|---|---|---|
-> | Prototype | 2026-01-04 → 2026-03-18 | closed | `logs/PROGRESS.md` |
-> | Public beta | 2026-03-19 → | **active** | `logs/PROGRESS_2.md` |
+> | Prototype | 2026-01-04 → 2026-03-18 | closed | `logs/PROGRESS_1.md` |
+> | Public beta | 2026-03-19 → | **active** | `logs/PROGRESS.md` |
+>
+> The active phase keeps `PROGRESS.md`; the closed one moved out to `PROGRESS_1.md`.
 
 ---
 
