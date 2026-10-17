@@ -4,12 +4,27 @@
 
 **A Loop Engineering-friendly Kit of Markdown Files to Maintain Project Context for/by Agents. Nothing More!**
 
+- [Superpowers](https://github.com/obra/superpowers) are skills for development.
+- [SpecKit](https://github.com/github/spec-kit) is AI-SDLC for development.
+- ClaudeMem or `MEMORY.md` is your agent's memory.
+- **Kia Context is your project's chronological memory.**
+
+It captures where the project came from (`genesis/`), how it is specified and designed (`specs/`), and
+how it is progressing (`logs/`):
+
+- **`genesis/`** captures the very first moments of the project, at t=0 — so you can always see how it
+  was seeded.
+- **`specs/`** holds the philosophy, design and architecture of the project. Think of it as an SRS.
+- **`logs/`** captures the project's live progress: the options that were evaluated, the decisions that
+  were made, and the milestones to loop over as the project is built.
+
 Not a framework. Not a workflow. Not a competitor to [spec-kit](https://github.com/github/spec-kit),
 Claude's memory, or your agent's own features. Use all of those. What I provide are the
 context docs you end up asking an agent to write anyway — same names, same places, so it knows where
 things go without being told every session.
 
-There is nothing to learn. You talk to your agent normally; it keeps the files up to date.
+There is nothing to learn. You just talk to your agent normally, and it maintains these docs for you —
+it is instructed on how to do it in `AGENTS.md`.
 
 ## Quick Install
 
