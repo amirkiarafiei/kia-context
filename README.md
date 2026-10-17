@@ -6,29 +6,26 @@
 
 Not a framework. Not a workflow. Not a competitor to [spec-kit](https://github.com/github/spec-kit),
 Claude's memory, or your agent's own features. Use all of those. What I provide are the
-context docs you end up asking an agent to write anyway — same names, same places, so it knows where
-things go without being told every session.
+context docs that you usually ask an agent to write.
 
-There is nothing to learn. You talk to your agent normally; it keeps the files up to date.
+There is nothing to learn. You talk to your agent as usual, and it keeps the files up to date.
 
 ## Comparison with Others
 
-- [Superpowers](https://github.com/obra/superpowers) are skills for development.
-- [SpecKit](https://github.com/github/spec-kit) is AI-SDLC for development.
-- [ClaudeMem](https://github.com/thedotmack/claude-mem) or [`MEMORY.md`](https://code.claude.com/docs/en/memory)
-  is your agent's memory.
-- **Kia Context is your project's chronological memory.**
+- [Superpowers](https://github.com/obra/superpowers) → Skills for Development
+- [SpecKit](https://github.com/github/spec-kit) → AI-SDLC
+- [ClaudeMem](https://github.com/thedotmack/claude-mem) / [`MEMORY.md`](https://code.claude.com/docs/en/memory) → Agent Memory
+- **Kia Context → Project Memory**
 
-It captures where the project came from (`genesis/`), how it is specified and designed (`specs/`), and
-how it is progressing (`logs/`):
+Kia Context keeps a chronological record of the project in three folders:
 
-- **`genesis/`** captures the very first moments of the project, at t=0 — so you can always see how it
-  was seeded.
-- **`specs/`** holds the philosophy, design and architecture of the project. Think of it as an SRS.
-- **`logs/`** captures the project's live progress: the options that were evaluated, the decisions that
-  were made, and the milestones to loop over as the project is built.
+- **`genesis/`** records the first moments of the project, at t=0. It shows how the project started.
+- **`specs/`** contains the philosophy, design and architecture of the project. It is similar to an SRS
+  (Software Requirements Specification).
+- **`logs/`** records the live progress of the project. It contains the options you considered, the
+  decisions you made, and the milestones that the agent loops over.
 
-Your agent maintains these docs as you talk to it — it is instructed on how to do it in `AGENTS.md`.
+Your agent updates these docs while you talk to it. The instructions for the agent are in `AGENTS.md`.
 
 ## Quick Install
 
@@ -42,67 +39,67 @@ curl -sSL https://raw.githubusercontent.com/amirkiarafiei/kia-context/main/insta
 
 ![Flow](assets/flow.png)
 
-Sorry I just lied. There is one small thing you need to learn:
+Sorry, I lied. There is one small thing to learn:
 
-1. **Talk to your Agent**: Brainstorm features, design architecture, and make key decisions as usual.
-2. **Define milestones:** Establish your implementation plan. The agent records each milestone and its acceptance criteria in `PROGRESS.md`.
-3. **Loop over the milestones:** Work through them sequentially or in batches, whichever suits your workflow — one at a time, several at once.
+1. **Talk to your agent:** Brainstorm features, design the architecture, and make key decisions as usual.
+2. **Define milestones:** Make your implementation plan. The agent records each milestone and its acceptance criteria in `PROGRESS.md`.
+3. **Loop over the milestones:** Complete them one at a time or in batches, as your workflow requires.
 
 The agent updates the necessary files the way it writes commit messages.
 
 ## Context System
 
-Eight files under `kia-context/`. The agent reads and writes all of them.
+There are eight files in `kia-context/`. The agent reads and writes all of them.
 
 
-| File                    | What it holds                                                                                                                                                       |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `INDEX.md`              | The map. What every other file is, which era it covers, and which one to open for a given question. Read first.                                                     |
-| `genesis/SEED.md`       | The first prompts that started the project, lightly cleaned. Written once, then left alone.                                                                         |
-| `genesis/GENESIS.md`    | Why the project exists — what happened that made it start, who it is for, and what was deliberately left out on day one.                                            |
-| `specs/MANIFESTO.md`    | What the product is, and the numbered rules it may not break. Plain English, no jargon; this is the one people read.                                                |
-| `specs/ARCHITECTURE.md` | How it actually works — the things it deals with, the states they move through, the rules it enforces, and the stack underneath.                                    |
-| `specs/DESIGN.md`       | The design system in [DESIGN.md](https://github.com/google-labs-code/design.md) format — tokens plus the reasoning behind them. Delete it if there is no interface. |
-| `logs/PROGRESS.md`      | Milestones, their deliverables and acceptance criteria, and a short report when each one closes. Where the agent looks to find the next thing to build.             |
-| `logs/BRAINSTORM.md`    | Numbered decisions and open questions. Why an option was chosen and what was rejected — so nobody re-argues it in three months.                                     |
+| File                    | What it holds                                                                                                                                                     |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `INDEX.md`              | The map: what each file is, which period it covers, and which file to open for a question. Read it first.                                                         |
+| `genesis/SEED.md`       | The first prompts that started the project, with small edits. Written once, then not changed.                                                                     |
+| `genesis/GENESIS.md`    | Why the project exists: what started it, who it is for, and what was intentionally not included at the start.                                                     |
+| `specs/MANIFESTO.md`    | What the product is, and the numbered rules that it must not break. Plain English, no jargon. People read this file.                                              |
+| `specs/ARCHITECTURE.md` | How the system works: the things it manages, the states they move through, the rules it enforces, and the technology stack.                                       |
+| `specs/DESIGN.md`       | The design system in [DESIGN.md](https://github.com/google-labs-code/design.md) format: tokens and the reasons for them. Delete it if there is no user interface. |
+| `logs/PROGRESS.md`      | Milestones, their deliverables and acceptance criteria, and a short report when each milestone closes. The agent looks here for the next task.                    |
+| `logs/BRAINSTORM.md`    | Numbered decisions and open questions. Why you chose an option and what you rejected, so nobody argues it again in three months.                                  |
 
 
-Beside them, `docs/` holds human-facing write-ups — software and system architecture, deployment,
-authentication, security. Those are written **only when someone asks for one**, may hold diagrams and long
-text, and are free to go out of date, because nothing reads them to do the work.
+Beside them, `docs/` holds documents for people: software and system architecture, deployment,
+authentication, and security. The agent writes one **only when someone asks for it**. These documents can
+contain diagrams and long text. They can become out of date, because no agent reads them to do the work.
 
-Delete whatever your project does not need. Every layout in every file is a suggestion; only the
+Delete the files that your project does not need. The layout of each file is only a suggestion. Only the
 frontmatter is fixed.
 
 ## Skills
 
-You can run them, and so can the agent.
+You can run the skills. The agent can also run them.
 
 
-|                     | When                                                                                                                                                                                                                                                                                                 |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/kia-context-init` | Once per repo, straight after installing. Works on a half-built project too: it reads your code for `ARCHITECTURE.md` and `DESIGN.md`, drafts `PROGRESS.md` and `BRAINSTORM.md` from git history and flags them as inferred, and asks you a few short questions for `GENESIS.md` and `MANIFESTO.md`. |
-| `/kia-context-help` | Any time you or the agent are unsure what a file is for, or where something should be written down.                                                                                                                                                                                                  |
-| `/kia-context-sync` | After a stretch of work, before a handover, or whenever the files have fallen behind what the code actually does.                                                                                                                                                                                    |
-| `/kia-context-migrate` | After re-running the installer on a project that already had kiacontext, when it says this project is behind. Applies only what changed since your version. |
+|                        | When                                                                                                                                                                                                                                                                                                                                    |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/kia-context-init`    | Once per repository, immediately after you install. It also works on a project that is partly built. It reads your code to write `ARCHITECTURE.md` and `DESIGN.md`. It drafts `PROGRESS.md` and `BRAINSTORM.md` from the git history and marks them as inferred. It asks you a few short questions for `GENESIS.md` and `MANIFESTO.md`. |
+| `/kia-context-help`    | When you or the agent are not sure what a file is for, or where to write something.                                                                                                                                                                                                                                                     |
+| `/kia-context-sync`    | After a period of work, before a handover, or when the files do not agree with what the code does.                                                                                                                                                                                                                                      |
+| `/kia-context-migrate` | After you run the installer again on a project that already has kiacontext, and the installer says that the project is behind. It applies only the changes since your version.                                                                                                                                                          |
 
 
 
 
 ## Loop-engineering-friendly
 
-A finished milestone list with acceptance criteria is what an autonomous loop needs: a next task, a
-definition of done, and a place to write the result. `PROGRESS.md` ships with its own loop protocol and
-circuit breakers, so the loop knows when to stop.
+An autonomous loop needs three things: a next task, a definition of done, and a place to write the
+result. A complete milestone list with acceptance criteria gives all three. `PROGRESS.md` contains its own
+loop procedure and circuit breakers, so the loop knows when to stop.
 
 That comes from the format. Nothing here needs a loop.
 
 ## Installation
 
-The one-liner at the top is the fast path. To read the script before running it, clone the repo and run
-`./install.sh`. Either way it asks one question — which agents work in this repo — and is safe to run
-again. It never touches a context file you already have, and anything of ours that it does replace is
-copied to `*.kiacontext-bak` first.
+The command at the top is the fastest method. To read the script before you run it, clone the repository
+and run `./install.sh`. The installer asks one question: which agents work in this repository. You can
+safely run it again. It never changes a context file that you already have. Before it replaces one of its
+own files, it copies that file to `*.kiacontext-bak`.
 
 ```
 ./install.sh                                    interactive
@@ -110,43 +107,51 @@ copied to `*.kiacontext-bak` first.
 ./install.sh --dry-run                          show what it would do
 ```
 
-It does three things: creates `kia-context/` and `docs/`, adds the agent instructions to `AGENTS.md` (and
-`CLAUDE.md` / `GEMINI.md`) inside markers so a re-run replaces them instead of adding a second copy, and
-installs four project-scoped skills for the agents you pick.
+The installer does three things:
+
+1. It creates `kia-context/` and `docs/`.
+2. It adds the agent instructions to `AGENTS.md` (and `CLAUDE.md` / `GEMINI.md`) between markers. When you
+   run it again, it replaces the instructions and does not add a second copy.
+3. It installs four project-scoped skills for the agents that you select.
 
 ## Updating
 
-Run the installer again. That is the whole update path, and it is safe by design:
+To update, run the installer again. This is the full update procedure, and it is safe:
 
-| What | Happens on a re-run |
+| What | What happens when you run it again |
 | ---- | ------------------- |
-| `kia-context/`, `docs/` | left alone — they hold your project, not ours |
-| the `AGENTS.md` block | replaced **in place**, previous copy kept at `AGENTS.md.kiacontext-bak` |
-| the skills | replaced, previous copy kept at `SKILL.md.kiacontext-bak` |
+| `kia-context/`, `docs/` | not changed — these files contain your project, not ours |
+| the `AGENTS.md` block | replaced **in place**; the previous copy is kept at `AGENTS.md.kiacontext-bak` |
+| the skills | replaced; the previous copy is kept at `SKILL.md.kiacontext-bak` |
 
-A backup is written only when the content is actually about to change, so an
-unchanged re-run leaves nothing behind. **An existing backup is never overwritten** —
-later ones become `.kiacontext-bak.1`, `.kiacontext-bak.2`. That matters more than it
-sounds: the first backup is the one holding whatever you changed, and a single slot
-would let the next routine update replace your edit with a copy of our own previous
-version. Delete them whenever you have looked.
+The installer writes a backup only when the content will change. If nothing changed, it writes no backup.
+**The installer never overwrites an existing backup.** It names later backups `.kiacontext-bak.1`,
+`.kiacontext-bak.2`, and so on.
 
-If the markers around the block have been damaged — one of the pair deleted, or the block pasted twice —
-the installer **refuses to touch that file** and tells you what to repair. Rewriting it from a half-open
-marker would take your surrounding text with it. Nothing is reported as installed unless it was actually
-written: if any part fails, the run says so and exits non-zero rather than printing a green tick.
+This is important. The first backup contains your changes. With only one backup file, the next update
+could replace your changes with an old copy of our file. You can delete the backups after you examine them.
 
-When the harness itself changes shape, your context files need moving, and only an agent can do that
-sensibly — these are prose documents, not a schema. So the installer reads the version this project is
-stamped with (`harness:` in `kia-context/INDEX.md`) and, if it is behind, points you at
-`/kia-context-migrate`. That skill applies only the changes since your version, moves content rather than
-recreating it, and updates the stamp **last** — so a half-applied migration never looks finished.
+Sometimes the markers around the block become damaged. For example, one marker is deleted, or the block
+is pasted twice. Then the installer **does not change that file**, and it tells you what to repair. If it
+rewrote the file from a damaged marker, it could delete your text around the block.
+
+The installer reports a file as installed only when it wrote that file. If any part fails, the installer
+tells you and exits with a non-zero code. It does not show a green tick.
+
+Sometimes the structure of the harness changes. Then your context files must move. Only an agent can do
+this correctly, because these files are prose, not a schema. The installer reads the version of this
+project (`harness:` in `kia-context/INDEX.md`). If the project is behind, the installer tells you to run
+`/kia-context-migrate`.
+
+That skill applies only the changes since your version. It moves your content and does not write it again
+from the start. It updates the version stamp **last**, so a migration that is not complete never looks
+complete.
 
 ### Agents it knows
 
-Each one gets the four skills in the directory its own vendor documents. `AGENTS.md` is always written,
-and every agent added in v0.2 reads it, so none of them needs an instruction file of its own. Claude Code
-and Gemini CLI also get `CLAUDE.md` and `GEMINI.md`, since those are what they read first.
+The installer puts the four skills in the directory that each vendor documents. The installer always writes
+`AGENTS.md`. Every agent added in v0.2 reads this file, so these agents do not need their own instruction
+file. Claude Code and Gemini CLI also get `CLAUDE.md` and `GEMINI.md`, because they read those files first.
 
 | Agent | Slug | Skills go in |
 | ----- | ---- | ------------ |
@@ -164,26 +169,30 @@ and Gemini CLI also get `CLAUDE.md` and `GEMINI.md`, since those are what they r
 | Oh My Pi | `omp` | `.omp/skills/` |
 | Grok | `grok` | `.grok/skills/` |
 
-`.agents/skills/` is a shared convention rather than one vendor's. Codex and Antigravity use it as their
-primary directory, so picking both installs one copy instead of two. Hermes, Pi and Oh My Pi read it as
-well, but the installer writes each of them the directory its own vendor documents — so those get a copy
-each, and moving them to the shared one is your call, not the installer's.
+`.agents/skills/` is a shared convention. It does not belong to one vendor. Codex and Antigravity use it as
+their primary directory. If you select both, the installer installs one copy, not two.
 
-**Hermes and Pi ignore project skills until the project is trusted.** The installer says so when you
-pick either; Hermes uses `hermes skills trust`, Pi prompts on first run. Oh My Pi has no such gate.
+Hermes, Pi and Oh My Pi also read `.agents/skills/`. But the installer writes their skills to the directory
+that each vendor documents, so each of these agents gets its own copy. You can move them to the shared
+directory if you want.
 
-Anything else: pick **Other** and give it a path, or pass `--skills-dir`.
+**Hermes and Pi ignore project skills until you trust the project.** The installer tells you this when you
+select one of them. For Hermes, run `hermes skills trust`. Pi asks you on the first run. Oh My Pi does not
+have this step.
+
+For a different agent, select **Other** and give a path, or use `--skills-dir`.
 
 ## Naming Philosophy
 
 **Kia** as in Amirkia. Also as in the car.
 
-Kia builds cars that are genuinely good without being the best or the most expensive. Nobody buys one
-expecting a Ferrari, and nobody regrets it either. It starts every morning, it does the job, and everyone
-is happy with it. It has never pretended to be a Rolls-Royce.
+Kia makes cars that are good, but not the best or the most expensive. Nobody buys a Kia and expects a
+Ferrari, and nobody regrets the purchase. It starts every morning, it does its job, and its owners are
+satisfied. It does not try to be a Rolls-Royce.
 
-Same here. This is not competing with [spec-kit](https://github.com/github/spec-kit) or
-[Superpowers](https://github.com/obra/superpowers). Those are doing something more ambitious. Kia Context is just a good way to maitain project context. Simple, easy to understand, and enough.
+Kia Context is the same. It does not compete with [spec-kit](https://github.com/github/spec-kit) or
+[Superpowers](https://github.com/obra/superpowers). Those projects try to do more. Kia Context is a good way
+to maintain project context. It is simple, easy to understand, and enough.
 
 Nothing more.
 
@@ -196,4 +205,4 @@ skills/             the four skills
 tests/              update and migration scenarios — ./tests/update-scenarios.sh
 ```
 
-MIT.
+License: MIT.
