@@ -120,19 +120,19 @@ file. Claude Code and Gemini CLI also get `CLAUDE.md` and `GEMINI.md`, because t
 
 | Agent | Slug | Skills go in |
 | ----- | ---- | ------------ |
-| Claude Code | `claude` | `.claude/skills/` |
-| Cursor | `cursor` | `.cursor/skills/` |
-| Gemini CLI | `gemini` | `.gemini/skills/` |
-| Codex | `codex` | `.agents/skills/` |
-| GitHub Copilot | `copilot` | `.copilot/skills/` |
-| OpenCode | `opencode` | `.opencode/skills/` |
-| Qoder | `qoder` | `.qoder/skills/` |
-| Kiro | `kiro` | `.kiro/skills/` |
-| Hermes Agent | `hermes` | `.hermes/skills/` |
-| Antigravity | `antigravity` | `.agents/skills/` |
-| Pi | `pi` | `.pi/skills/` |
-| Oh My Pi | `omp` | `.omp/skills/` |
-| Grok | `grok` | `.grok/skills/` |
+| <img src="assets/logos/claude.svg" alt="" width="20" height="20" align="absmiddle" />&nbsp; Claude Code | `claude` | `.claude/skills/` |
+| <img src="assets/logos/cursor.svg" alt="" width="20" height="20" align="absmiddle" />&nbsp; Cursor | `cursor` | `.cursor/skills/` |
+| <img src="assets/logos/gemini.svg" alt="" width="20" height="20" align="absmiddle" />&nbsp; Gemini CLI | `gemini` | `.gemini/skills/` |
+| <img src="assets/logos/codex.svg" alt="" width="20" height="20" align="absmiddle" />&nbsp; Codex | `codex` | `.agents/skills/` |
+| <img src="assets/logos/copilot.svg" alt="" width="20" height="20" align="absmiddle" />&nbsp; GitHub Copilot | `copilot` | `.copilot/skills/` |
+| <img src="assets/logos/opencode.svg" alt="" width="20" height="20" align="absmiddle" />&nbsp; OpenCode | `opencode` | `.opencode/skills/` |
+| <img src="assets/logos/qoder.svg" alt="" width="20" height="20" align="absmiddle" />&nbsp; Qoder | `qoder` | `.qoder/skills/` |
+| <img src="assets/logos/kiro.svg" alt="" width="20" height="20" align="absmiddle" />&nbsp; Kiro | `kiro` | `.kiro/skills/` |
+| <img src="assets/logos/hermes.svg" alt="" width="20" height="20" align="absmiddle" />&nbsp; Hermes Agent | `hermes` | `.hermes/skills/` |
+| <img src="assets/logos/antigravity.svg" alt="" width="20" height="20" align="absmiddle" />&nbsp; Antigravity | `antigravity` | `.agents/skills/` |
+| <img src="assets/logos/pi.svg" alt="" width="20" height="20" align="absmiddle" />&nbsp; Pi | `pi` | `.pi/skills/` |
+| <img src="assets/logos/omp.svg" alt="" width="20" height="20" align="absmiddle" />&nbsp; Oh My Pi | `omp` | `.omp/skills/` |
+| <img src="assets/logos/grok.svg" alt="" width="20" height="20" align="absmiddle" />&nbsp; Grok | `grok` | `.grok/skills/` |
 
 `.agents/skills/` is a shared convention. It does not belong to one vendor. Codex and Antigravity use it as
 their primary directory. If you select both, the installer installs one copy, not two.
